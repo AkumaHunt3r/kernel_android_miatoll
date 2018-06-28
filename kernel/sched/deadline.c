@@ -1656,6 +1656,8 @@ static struct sched_dl_entity *pick_next_dl_entity(struct rq *rq,
 	return rb_entry(left, struct sched_dl_entity, rb_node);
 }
 
+extern int update_dl_rq_load_avg(u64 now, int cpu, struct dl_rq *dl_rq, int running);
+
 static struct task_struct *
 pick_next_task_dl(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 {
@@ -1708,6 +1710,10 @@ pick_next_task_dl(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 	if (hrtick_enabled(rq))
 		start_hrtick_dl(rq, p);
 
+	if (p)
+		update_dl_rq_load_avg(rq_clock_task(rq), cpu_of(rq), dl_rq,
+				 rq->curr->sched_class == &dl_sched_class);
+
 	queue_push_tasks(rq);
 
 	return p;
@@ -1716,6 +1722,8 @@ pick_next_task_dl(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 static void put_prev_task_dl(struct rq *rq, struct task_struct *p)
 {
 	update_curr_dl(rq);
+
+	update_dl_rq_load_avg(rq_clock_task(rq), cpu_of(rq), &rq->dl, 1);
 
 	if (on_dl_rq(&p->dl) && p->nr_cpus_allowed > 1)
 		enqueue_pushable_dl_task(rq, p);

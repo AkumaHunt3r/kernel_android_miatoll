@@ -667,6 +667,8 @@ struct dl_rq {
 	unsigned long dl_nr_migratory;
 	int overloaded;
 
+	struct sched_avg avg;
+
 	/*
 	 * Tasks on this rq that can be pushed away. They are kept in
 	 * an rb-tree, ordered by tasks' deadlines, with caching
@@ -930,6 +932,7 @@ struct rq {
 	struct list_head cfs_tasks;
 
 	u64 rt_avg;
+	u64 dl_avg;
 	u64 age_stamp;
 	u64 idle_stamp;
 	u64 avg_idle;
@@ -2197,6 +2200,13 @@ static inline unsigned long cpu_util_rt(int cpu)
 	struct rt_rq *rt_rq = &(cpu_rq(cpu)->rt);
 
 	return rt_rq->avg.util_avg;
+}
+
+static inline unsigned long cpu_util_dl(int cpu)
+{
+	struct dl_rq *dl_rq = &(cpu_rq(cpu)->dl);
+
+	return dl_rq->avg.util_avg;
 }
 
 static inline unsigned long cpu_util(int cpu)
