@@ -933,6 +933,9 @@ struct rq {
 
 	u64 rt_avg;
 	u64 dl_avg;
+#if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
+	struct sched_avg irq_avg;
+#endif
 	u64 age_stamp;
 	u64 idle_stamp;
 	u64 avg_idle;
@@ -2207,6 +2210,17 @@ static inline unsigned long cpu_util_dl(int cpu)
 	struct dl_rq *dl_rq = &(cpu_rq(cpu)->dl);
 
 	return dl_rq->avg.util_avg;
+}
+
+static inline unsigned long cpu_util_irq(int cpu)
+{
+	struct rq *rq = cpu_rq(cpu);
+
+#if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
+	return rq->irq_avg.util_avg;
+#else
+	return 0;
+#endif
 }
 
 static inline unsigned long cpu_util(int cpu)

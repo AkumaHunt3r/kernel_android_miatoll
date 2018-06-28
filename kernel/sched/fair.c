@@ -3594,6 +3594,23 @@ int update_dl_rq_load_avg(u64 now, int cpu, struct dl_rq *dl_rq, int running)
 	return ret;
 }
 
+#if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
+int update_irq_load_avg(struct rq *rq, int running)
+{
+	int ret;
+
+	ret = ___update_load_avg(rq->clock, rq->cpu, &rq->irq_avg,
+			running, running, NULL, NULL);
+
+	return ret;
+}
+#else
+int update_irq_load_avg(struct rq *rq, int running)
+{
+	return 0;
+}
+#endif
+
 /*
  * Optional action to be done while updating the load average
  */
@@ -9754,6 +9771,7 @@ static void update_blocked_averages(int cpu)
 	rq->last_blocked_load_update_tick = jiffies;
 #endif
 	update_rt_rq_load_avg(rq_clock_task(rq), cpu, &rq->rt, 0);
+	update_irq_load_avg(rq, 0);
 #ifdef CONFIG_NO_HZ_COMMON
 	rq->last_blocked_load_update_tick = jiffies;
 #endif
