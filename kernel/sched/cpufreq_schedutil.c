@@ -65,7 +65,9 @@ struct sugov_cpu {
 	unsigned int iowait_boost_max;
 	u64 last_update;
 
+#ifdef CONFIG_SCHED_WALT
 	struct sched_walt_cpu_load walt_load;
+#endif
 
 	/* The fields below are only needed when sharing a policy. */
 	unsigned long util;
@@ -197,8 +199,12 @@ static void sugov_deferred_update(struct sugov_policy *sg_policy, u64 time,
 	if (!sugov_update_next_freq(sg_policy, time, next_freq))
 		return;
 
+#ifdef CONFIG_SCHED_WALT
 	if (use_pelt())
 		sg_policy->work_in_progress = true;
+#else
+	sg_policy->work_in_progress = true;
+#endif
 	irq_work_queue(&sg_policy->irq_work);
 }
 
@@ -267,7 +273,9 @@ static void sugov_get_util(unsigned long *util, unsigned long *max, int cpu)
 	*util = min(rq->cfs.avg.util_avg, cfs_max);
 	*max = cfs_max;
 
+#ifdef CONFIG_SCHED_WALT
 	*util = boosted_cpu_util(cpu, &loadcpu->walt_load);
+#endif
 }
 
 static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time,
@@ -369,7 +377,11 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 	if (!sugov_should_update_freq(sg_policy, time))
 		return;
 
+#ifdef CONFIG_SCHED_WALT
 	busy = use_pelt() && sugov_cpu_is_busy(sg_cpu);
+#else
+	busy = sugov_cpu_is_busy(sg_cpu);
+#endif
 
 	if (flags & SCHED_CPUFREQ_RT_DL) {
 		sg_policy->cached_raw_freq = sg_policy->prev_cached_raw_freq;
