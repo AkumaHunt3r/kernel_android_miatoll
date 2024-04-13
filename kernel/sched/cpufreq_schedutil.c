@@ -364,8 +364,10 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 	unsigned int next_f;
 	bool busy;
 
+#ifdef CONFIG_SCHED_WALT
 	if (flags & SCHED_CPUFREQ_PL)
 		return;
+#endif
 
 	flags &= ~SCHED_CPUFREQ_RT_DL;
 	sugov_set_iowait_boost(sg_cpu, time, flags);
@@ -473,8 +475,10 @@ static void sugov_update_shared(struct update_util_data *hook, u64 time,
 	unsigned long util, max;
 	unsigned int next_f;
 
+#ifdef CONFIG_SCHED_WALT
 	if (flags & SCHED_CPUFREQ_PL)
 		return;
+#endif
 
 	sugov_get_util(&util, &max, sg_cpu->cpu);
 
