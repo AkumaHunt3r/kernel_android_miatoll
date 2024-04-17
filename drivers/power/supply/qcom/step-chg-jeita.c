@@ -22,6 +22,13 @@
 #include "step-chg-jeita.h"
 #include "smb5-lib.h"
 
+#undef pr_info
+#undef pr_debug
+#undef pr_err
+#define pr_info(...) { }
+#define pr_debug(...) { }
+#define pr_err(...) do {} while (0)
+
 #define STEP_CHG_VOTER		"STEP_CHG_VOTER"
 #define JEITA_VOTER		"JEITA_VOTER"
 #define DYNAMIC_FV_VOTER	"DYNAMIC_FV_VOTER"

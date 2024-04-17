@@ -38,6 +38,11 @@
 #define pr_debug pr_err
 #endif
 
+#undef pr_info
+#undef pr_debug
+#define pr_info(...) { }
+#define pr_debug(...) { }
+
 static struct smb_params smb5_pmi632_params = {
 	.fcc			= {
 		.name   = "fast charge current",
