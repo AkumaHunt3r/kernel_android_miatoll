@@ -96,6 +96,7 @@
 #include <linux/scs.h>
 #include <linux/simple_lmk.h>
 #include <linux/devfreq_boost.h>
+#include <linux/cpu_input_boost.h>
 
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
@@ -2216,6 +2217,10 @@ struct task_struct *fork_idle(int cpu)
 	return task;
 }
 
+#ifdef CONFIG_KPROFILES
+extern int kp_active_mode(void);
+#endif
+
 /*
  *  Ok, this is the main fork-routine.
  *
@@ -2233,11 +2238,26 @@ long _do_fork(unsigned long clone_flags,
 	int trace = 0;
 	long nr;
 
-	/* Boost DDR bus to the max for 50 ms when userspace launches an app */
+#ifdef CONFIG_KPROFILES
+	/* Boost CPU and DDR bus when userspace launches an app */
 	if (task_is_zygote(current) && df_boost_within_input(1000)) {
-		devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_BW, 50);
-		devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 50);
+		switch (kp_active_mode()) {
+		case 0:
+		case 2:
+			cpu_input_boost_kick_max(50);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_BW, 50);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 50);
+			break;
+		case 3:
+			cpu_input_boost_kick_max(100);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_BW, 100);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 100);
+			break;
+		default:
+			break;
+		}
 	}
+#endif
 
 	/*
 	 * Determine whether and which event to report to ptracer.  When
