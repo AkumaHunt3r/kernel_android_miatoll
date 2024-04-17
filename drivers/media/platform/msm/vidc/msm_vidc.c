@@ -26,6 +26,11 @@
 #include "msm_vidc_clocks.h"
 #include <linux/dma-buf.h>
 
+#undef pr_info
+#undef pr_debug
+#define pr_info(...) { }
+#define pr_debug(...) { }
+
 #define MAX_EVENTS 30
 
 static int try_get_ctrl(struct msm_vidc_inst *inst,
