@@ -1808,17 +1808,14 @@ static ssize_t disksize_store(struct device *dev,
 	int err;
 
 	struct sysinfo i;
-	static unsigned short create_disksize __read_mostly;
-	static int total_ram;
+	int create_disksize, total_ram;
 
 	si_meminfo(&i);
 	total_ram = i.totalram << (PAGE_SHIFT - 10);
 	if (total_ram > 6144ull * 1024) {
-	  create_disksize = 6;
-	} else if (total_ram > 4096ull * 1024) {
 	  create_disksize = 4;
 	} else {
-	  create_disksize = 2;
+	  create_disksize = 3;
 	}
 	disksize = (u64)SZ_1G * create_disksize;
 
