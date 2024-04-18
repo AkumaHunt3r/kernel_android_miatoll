@@ -54,7 +54,7 @@ DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
  * Number of tasks to iterate in a single balance run.
  * Limited because this is done with IRQs disabled.
  */
-unsigned int sysctl_sched_nr_migrate = NR_CPUS;
+unsigned int sysctl_sched_nr_migrate = NR_CPUS * 2;
 
 /*
  * period over which we average the RT time consumption, measured
