@@ -713,10 +713,10 @@ KBUILD_CFLAGS   += -O3 -pipe
 endif
 
 ifeq ($(cc-name),clang)
-KBUILD_CFLAGS += -march=armv8.2-a+crypto+crc+lse \
-	-mcpu=cortex-a55+crypto+crc+lse \
-	-mllvm -inline-threshold=1000 \
-	-mllvm -inlinehint-threshold=1000
+KBUILD_CFLAGS += -march=armv8.2-a+crypto+crc+lse+dotprod \
+	-mcpu=cortex-a55+crypto+crc+lse+dotprod \
+	-mllvm -inline-threshold=5000 \
+	-mllvm -inlinehint-threshold=5000
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one
