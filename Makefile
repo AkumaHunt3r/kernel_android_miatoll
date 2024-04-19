@@ -706,17 +706,27 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, int-in-bool-context)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, attribute-alias)
 
+KBUILD_CFLAGS += -pipe
+
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS   += -Os
 else
-KBUILD_CFLAGS   += -O3 -pipe
+KBUILD_CFLAGS   += -O3
 endif
 
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS += -march=armv8.2-a+crypto+crc+lse+dotprod \
 	-mcpu=cortex-a55+crypto+crc+lse+dotprod \
 	-mllvm -inline-threshold=5000 \
-	-mllvm -inlinehint-threshold=5000
+	-mllvm -inlinehint-threshold=5000 \
+	-mllvm -polly \
+	-mllvm -polly-postopts \
+	-mllvm -polly-ast-use-context \
+	-mllvm -polly-ast-detect-parallel \
+	-mllvm -polly-run-inliner \
+	-mllvm -polly-reschedule \
+	-mllvm -polly-loopfusion-greedy \
+	-mllvm -polly-vectorizer=stripmine
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one
