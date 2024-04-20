@@ -717,8 +717,8 @@ endif
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS += -march=armv8.2-a+crypto+crc+lse+dotprod \
 	-mcpu=cortex-a55+crypto+crc+lse+dotprod \
-	-mllvm -inline-threshold=5000 \
-	-mllvm -inlinehint-threshold=5000 \
+	-mllvm -inline-threshold=1000 \
+	-mllvm -inlinehint-threshold=1000 \
 	-mllvm -polly \
 	-mllvm -polly-postopts \
 	-mllvm -polly-ast-use-context \
