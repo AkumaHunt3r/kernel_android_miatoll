@@ -30,8 +30,10 @@
 
 #undef pr_info
 #undef pr_debug
+#undef pr_err
 #define pr_info(...) { }
 #define pr_debug(...) { }
+#define pr_err(...) { }
 
 #define DEFAULT_UPDATE_TIME_MS			64000
 #define SOC_SCALE_HYST_MS			2000
