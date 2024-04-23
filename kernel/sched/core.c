@@ -8014,11 +8014,13 @@ static void cpu_util_update_eff(struct cgroup_subsys_state *css)
 		for_each_clamp_id(clamp_id) {
 			/* Assume effective clamps matches requested clamps */
 			eff[clamp_id] = css_tg(css)->uclamp_req[clamp_id].value;
+#if 0
 			/* Cap effective clamps with parent's effective clamps */
 			if (uc_parent &&
 			    eff[clamp_id] > uc_parent[clamp_id].value) {
 				eff[clamp_id] = uc_parent[clamp_id].value;
 			}
+#endif
 		}
 		/* Ensure protection is always capped by limit */
 		eff[UCLAMP_MIN] = min(eff[UCLAMP_MIN], eff[UCLAMP_MAX]);
