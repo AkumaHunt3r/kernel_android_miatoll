@@ -2266,19 +2266,22 @@ int drm_mode_atomic_ioctl(struct drm_device *dev,
 		return -EINVAL;
 
 #ifdef CONFIG_KPROFILES
-	if (!(arg->flags & DRM_MODE_ATOMIC_TEST_ONLY) &&
-			df_boost_within_input(3500)) {
+	if (!(arg->flags & DRM_MODE_ATOMIC_TEST_ONLY)) {
 		switch (kp_active_mode()) {
 		case 0:
 		case 2:
-			cpu_input_boost_kick_max(16);
-			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_BW, 32);
-			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 32);
+			if (df_boost_within_input(5000)) {
+				cpu_input_boost_kick_max(60);
+				devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_BW, 60);
+				devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 60);
+			} else if (df_boost_within_input(3000)) {
+				cpu_input_boost_kick_max(60);
+			}
 			break;
 		case 3:
-			cpu_input_boost_kick_max(32);
-			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_BW, 64);
-			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 64);
+			cpu_input_boost_kick_max(60);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_BW, 120);
+			devfreq_boost_kick_max(DEVFREQ_CPU_LLCC_DDR_BW, 120);
 			break;
 		default:
 			break;
