@@ -50,7 +50,6 @@ void cass_cpu_util(struct cass_cpu_cand *c, int this_cpu, bool sync)
 		c->util = est;
 	}
 #endif
-	}
 
 	/*
 	 * Account for lost capacity due to time spent in RT.
@@ -79,8 +78,8 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 	long res;
 
 	/* Prefer the CPU that fits the task */
-	if (cass_cmp(task_fits_capacity(p_util, a->cap_max),
-		     task_fits_capacity(p_util, b->cap_max)))
+	if (cass_cmp(task_fits_capacity(p_util, a->cap_max, a->cpu),
+		     task_fits_capacity(p_util, b->cap_max, b->cpu)))
 		goto done;
 
 	/* Prefer the CPU with lower relative utilization */
