@@ -77,6 +77,16 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 #define cass_eq(a, b) ({ res = (a) == (b); })
 	long res;
 
+    /* Prefer the CPU that's not overloaded */
+    if (cass_cmp(b->util / b->cap_max, a->util / a->cap_max))
+        goto done;
+
+    /* Prefer the CPU that's less overloaded if they're both overloaded */
+    if (b->util > b->cap_max && a->util > a->cap_max &&
+        cass_cmp(b->util * SCHED_CAPACITY_SCALE / b->cap_max,
+            a->util * SCHED_CAPACITY_SCALE / a->cap_max))
+        goto done;
+
 	/* Prefer the CPU that fits the task */
 	if (cass_cmp(task_fits_capacity(p_util, a->cap_max, a->cpu),
 		     task_fits_capacity(p_util, b->cap_max, b->cpu)))
