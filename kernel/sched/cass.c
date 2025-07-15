@@ -78,8 +78,7 @@ bool cass_prime_cpu(const struct cass_cpu_cand *c)
 	 * On arm64, the prime CPU is always the last CPU. If it doesn't have
 	 * the same original capacity as the prior CPU, then it is prime.
 	 */
-	return c->cpu == nr_cpu_ids - 1 &&
-	       arch_scale_cpu_capacity(nr_cpu_ids - 2) != SCHED_CAPACITY_SCALE;
+	return c->cpu >= nr_cpu_ids - 2;
 }
 
 /* Returns true if @a is a better CPU than @b */
@@ -90,6 +89,8 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 {
 #define cass_cmp(a, b) ({ res = (a) - (b); })
 #define cass_eq(a, b) ({ res = (a) == (b); })
+#define cass_fits_cap(cap, max) ((cap) * 1280 < (max) * 1024)
+
 	long res;
 
     /* Prefer the CPU that's not overloaded */
@@ -103,8 +104,8 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
         goto done;
 
 	/* Prefer the CPU that fits the task */
-	if (cass_cmp(task_fits_capacity(p, a->cap_max, a->cpu),
-		     task_fits_capacity(p, b->cap_max, b->cpu)))
+	if (cass_cmp(cass_fits_cap(p_util, a->cap_max),
+		     cass_fits_cap(p_util, b->cap_max)))
 		goto done;
 
 	/* Prefer the CPU that isn't the single fastest one in the system */
