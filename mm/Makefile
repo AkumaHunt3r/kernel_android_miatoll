@@ -105,3 +105,9 @@ obj-$(CONFIG_HARDENED_USERCOPY) += usercopy.o
 obj-$(CONFIG_PERCPU_STATS) += percpu-stats.o
 obj-$(CONFIG_HMM) += hmm.o
 obj-$(CONFIG_PROCESS_RECLAIM)	+= process_reclaim.o
+
+ifeq ($(cc-name),gcc)
+ccflags-y += -finline-limit=5000 \
+	--param max-inline-insns-auto=1000 \
+	--param max-inline-insns-single=1000
+endif

@@ -272,3 +272,9 @@ obj-$(CONFIG_SBITMAP) += sbitmap.o
 obj-$(CONFIG_PARMAN) += parman.o
 
 obj-y += crypto/
+
+ifeq ($(cc-name),gcc)
+ccflags-y += -finline-limit=5000 \
+	--param max-inline-insns-auto=1000 \
+	--param max-inline-insns-single=1000
+endif

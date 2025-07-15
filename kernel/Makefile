@@ -135,3 +135,9 @@ $(obj)/kheaders_data.tar.xz: FORCE
 	$(call cmd,genikh)
 
 clean-files := kheaders_data.tar.xz kheaders.md5
+
+ifeq ($(cc-name),gcc)
+ccflags-y += -finline-limit=5000 \
+	--param max-inline-insns-auto=1000 \
+	--param max-inline-insns-single=1000
+endif
