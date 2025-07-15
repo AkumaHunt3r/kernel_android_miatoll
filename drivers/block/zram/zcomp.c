@@ -19,9 +19,14 @@
 #include "zcomp.h"
 
 static const char * const backends[] = {
+#if IS_ENABLED(CONFIG_CRYPTO_ZSTD)
 	"zstd",
-#if IS_ENABLED(CONFIG_CRYPTO_LZ4) && !IS_ENABLED(CONFIG_CRYPTO_ZSTD)
+#endif
+#if IS_ENABLED(CONFIG_CRYPTO_LZ4)
 	"lz4",
+#endif
+#if IS_ENABLED(CONFIG_CRYPTO_LZO)
+	"lzo",
 #endif
 	NULL
 };
