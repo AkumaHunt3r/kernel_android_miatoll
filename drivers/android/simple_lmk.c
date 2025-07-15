@@ -475,15 +475,13 @@ void simple_lmk_trigger(void)
 static int simple_lmk_vmpressure_cb(struct notifier_block *nb,
 				    unsigned long pressure, void *data)
 {
-	if (pressure <= 50)
-		adaptive_min_free_pages = MIN_FREE_PAGES / 4;
-	else if (pressure >= 50)
-		adaptive_min_free_pages = MIN_FREE_PAGES / 2;
-	else if (pressure >= 90)
-		adaptive_min_free_pages = MIN_FREE_PAGES;
-
 	if (pressure == 100)
 		simple_lmk_trigger();
+
+	if (pressure >= 90)
+		adaptive_min_free_pages = MIN_FREE_PAGES;
+	else
+		adaptive_min_free_pages = MIN_FREE_PAGES / 2;
 
 	return NOTIFY_OK;
 }
