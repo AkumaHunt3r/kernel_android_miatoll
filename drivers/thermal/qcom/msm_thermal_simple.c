@@ -59,7 +59,8 @@ static void thermal_throttle_worker(struct work_struct *work)
 	struct thermal_drv *t = container_of(to_delayed_work(work), typeof(*t),
 					     throttle_work);
 	struct thermal_zone *new_zone, *old_zone;
-	int temp = 0, temp_cpus_avg = 0, temp_batt = 0, rc;
+	int temp = 0, temp_cpus_avg = 0, temp_batt = 0;
+	int rc;
 	s64 temp_total = 0, temp_avg = 0;
 	short i = 0;
 
@@ -88,16 +89,16 @@ static void thermal_throttle_worker(struct work_struct *work)
 	 */
 	temp_avg = (temp_cpus_avg + temp_batt) / 2;
 
-	/* Bail out earlier if cool enough */
-	if (temp_avg <= 38000 || temp_batt <= 38000)
+	/* Bail out earlier if cold enough */
+	if (temp_avg <= 35000 || temp_cpus_avg <= 35000 || temp_batt <= 35000)
 		goto done;
 
 	/* Emergency case */
-	if (temp_cpus_avg >= 90000 || temp_batt >= 43000)
+	if (temp_cpus_avg >= 45000 || temp_batt >= 40000)
 		temp_avg = temp_cpus_avg;
 
 	/* Log the current statistics */
-	pr_info_ratelimited("temp_avg: %i, batt: %i, cpus: %i\n",
+	pr_info_ratelimited("temp avg: %i, batt: %i, cpus temp: %i\n",
 			temp_avg, temp_batt, temp_cpus_avg);
 
 	old_zone = t->curr_zone;
@@ -105,7 +106,7 @@ static void thermal_throttle_worker(struct work_struct *work)
 
 	/* Go through all configured thermal zones */
 	for (i = t->nr_zones - 1; i >= 0; i--) {
-		if (temp_avg >= t->zones[i].trip_deg) {
+		if (temp_avg >= t->zones[i].trip_deg || temp_cpus_avg >= t->zones[i].trip_deg) {
 			new_zone = t->zones + i;
 			break;
 		}
