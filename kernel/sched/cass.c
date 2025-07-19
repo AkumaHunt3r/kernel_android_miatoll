@@ -106,6 +106,10 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 	if (sync && (cass_eq(a->cpu, this_cpu) || !cass_cmp(b->cpu, this_cpu)))
 		goto done;
 
+	/* Prefer the CPU with higher capacity headroom */
+	if (cass_cmp(a->cap / a->util, b->cap / b->util))
+		goto done;
+
 	/* Prefer the CPU with higher capacity */
 	if (cass_cmp(a->cap, b->cap))
 		goto done;
