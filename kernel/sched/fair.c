@@ -89,8 +89,8 @@ walt_dec_cfs_rq_stats(struct cfs_rq *cfs_rq, struct task_struct *p) {}
  *
  * (default: 6ms * (1 + ilog(ncpus)), units: nanoseconds)
  */
-unsigned int sysctl_sched_latency					= 10000000ULL;
-unsigned int normalized_sysctl_sched_latency		= 10000000ULL;
+unsigned int sysctl_sched_latency					= 5000000ULL;
+unsigned int normalized_sysctl_sched_latency		= 5000000ULL;
 
 /*
  * Enable/disable honoring sync flag in energy-aware wakeups.
@@ -119,8 +119,8 @@ enum sched_tunable_scaling sysctl_sched_tunable_scaling = SCHED_TUNABLESCALING_N
  *
  * (default: 0.75 msec * (1 + ilog(ncpus)), units: nanoseconds)
  */
-unsigned int sysctl_sched_min_granularity				= 2500000ULL;
-unsigned int normalized_sysctl_sched_min_granularity	= 2500000ULL;
+unsigned int sysctl_sched_min_granularity				= 1500000ULL;
+unsigned int normalized_sysctl_sched_min_granularity	= 1500000ULL;
 
 /*
  * This value is kept at sysctl_sched_latency/sysctl_sched_min_granularity
@@ -131,7 +131,7 @@ static unsigned int sched_nr_latency = 8;
  * After fork, child runs first. If set to 0 (default) then
  * parent will (try to) run first.
  */
-unsigned int sysctl_sched_child_runs_first __read_mostly;
+unsigned int sysctl_sched_child_runs_first __read_mostly = 1;
 
 /*
  * SCHED_OTHER wake-up granularity.
@@ -142,8 +142,8 @@ unsigned int sysctl_sched_child_runs_first __read_mostly;
  *
  * (default: 1 msec * (1 + ilog(ncpus)), units: nanoseconds)
  */
-unsigned int sysctl_sched_wakeup_granularity			= 5000000UL;
-unsigned int normalized_sysctl_sched_wakeup_granularity	= 5000000UL;
+unsigned int sysctl_sched_wakeup_granularity			= 5000000ULL;
+unsigned int normalized_sysctl_sched_wakeup_granularity	= 5000000ULL;
 
 unsigned int sysctl_sched_migration_cost				= 500000UL;
 DEFINE_PER_CPU_READ_MOSTLY(int, sched_load_boost);
