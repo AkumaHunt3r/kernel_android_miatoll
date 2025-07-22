@@ -54,7 +54,7 @@ DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
  * Number of tasks to iterate in a single balance run.
  * Limited because this is done with IRQs disabled.
  */
-unsigned int sysctl_sched_nr_migrate = 128;
+unsigned int sysctl_sched_nr_migrate = NR_CPUS;
 
 /*
  * period over which we average the RT time consumption, measured
@@ -772,7 +772,7 @@ static void set_load_weight(struct task_struct *p)
 static DEFINE_MUTEX(uclamp_mutex);
 
 /* Max allowed minimum utilization */
-unsigned int sysctl_sched_uclamp_util_min = 100;
+unsigned int sysctl_sched_uclamp_util_min;
 
 /* Max allowed maximum utilization */
 unsigned int sysctl_sched_uclamp_util_max = SCHED_CAPACITY_SCALE;
