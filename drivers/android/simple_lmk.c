@@ -466,7 +466,7 @@ void simple_lmk_mm_freed(struct mm_struct *mm)
 
 void simple_lmk_trigger(void)
 {
-	pr_info("Killing spree!\n");
+	pr_info_ratelimited("Killing spree!\n");
 	atomic_set(&needs_reclaim, 1);
 	smp_mb__after_atomic();
 	if (waitqueue_active(&oom_waitq))
