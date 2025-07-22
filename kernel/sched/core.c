@@ -5754,8 +5754,23 @@ static bool task_is_unity_game(struct task_struct *p)
 	if (p->signal->oom_score_adj >= 0) {
 		rcu_read_lock();
 		for_each_thread(p, t) {
-			/* Check for a UnityMain thread in the thread group */
+			/* Check for a Unity thread in the thread group */
 			if (!strcmp(t->comm, "UnityMain")) {
+				ret = true;
+				break;
+			}
+
+			/* Check for a Unreal thread in the thread group */
+			if (!strcmp(t->comm, "MainThread-UE4") ||
+				!strcmp(t->comm, "MainThread-UE5")) {
+				ret = true;
+				break;
+			}
+
+			/* Check for a "common" thread in the thread group */
+			if (!strcmp(t->comm, "GameThread") ||
+				!strcmp(t->comm, "RenderThread") ||
+				!strcmp(t->comm, "GLThread")) {
 				ret = true;
 				break;
 			}
