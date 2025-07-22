@@ -43,7 +43,11 @@
 /*
  * Decrement CPU capacity based on time not spent running tasks
  */
-#define SCHED_FEAT_NONTASK_CAPACITY 0
+#ifdef CONFIG_SCHED_CASS
+#define SCHED_FEAT_NONTASK_CAPACITY 1
+#else
+#define SCHED_FEAT_NONTASK_CAPACITY 1
+#endif
 
 /*
  * Queue remote wakeups on the target CPU and process them
