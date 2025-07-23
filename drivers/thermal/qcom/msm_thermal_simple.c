@@ -106,7 +106,7 @@ static void thermal_throttle_worker(struct work_struct *work)
 
 	/* Go through all configured thermal zones */
 	for (i = t->nr_zones - 1; i >= 0; i--) {
-		if (temp_avg >= t->zones[i].trip_deg || temp_cpus_avg >= t->zones[i].trip_deg) {
+		if (temp_avg >= t->zones[i].trip_deg) {
 			new_zone = t->zones + i;
 			break;
 		}
