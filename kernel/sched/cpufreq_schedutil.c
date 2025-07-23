@@ -261,9 +261,8 @@ static void sugov_get_util(unsigned long *util, unsigned long *max, int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long cfs_max;
-#if 0
 	struct sugov_cpu *loadcpu = &per_cpu(sugov_cpu, cpu);
-#endif
+
 	cfs_max = arch_scale_cpu_capacity(NULL, cpu);
 
 	*util = min(rq->cfs.avg.util_avg, cfs_max);
@@ -555,7 +554,6 @@ static ssize_t down_rate_limit_us_show(struct gov_attr_set *attr_set, char *buf)
 	return sprintf(buf, "%u\n", tunables->down_rate_limit_us);
 }
 
-#if 0
 static ssize_t up_rate_limit_us_store(struct gov_attr_set *attr_set,
 				      const char *buf, size_t count)
 {
@@ -575,9 +573,7 @@ static ssize_t up_rate_limit_us_store(struct gov_attr_set *attr_set,
 
 	return count;
 }
-#endif
 
-#if 0
 static ssize_t down_rate_limit_us_store(struct gov_attr_set *attr_set,
 					const char *buf, size_t count)
 {
@@ -597,7 +593,6 @@ static ssize_t down_rate_limit_us_store(struct gov_attr_set *attr_set,
 
 	return count;
 }
-#endif
 
 static ssize_t iowait_boost_enable_show(struct gov_attr_set *attr_set,
                                         char *buf)
@@ -607,7 +602,6 @@ static ssize_t iowait_boost_enable_show(struct gov_attr_set *attr_set,
                         tunables->iowait_boost_enable);
 }
 
-#if 0
 static ssize_t iowait_boost_enable_store(struct gov_attr_set *attr_set,
                                          const char *buf, size_t count)
 {
@@ -619,12 +613,11 @@ static ssize_t iowait_boost_enable_store(struct gov_attr_set *attr_set,
         tunables->iowait_boost_enable = enable;
         return count;
 }
-#endif
 
-static struct governor_attr up_rate_limit_us = __ATTR_RO(up_rate_limit_us);
-static struct governor_attr down_rate_limit_us = __ATTR_RO(down_rate_limit_us);
+static struct governor_attr up_rate_limit_us = __ATTR_RW(up_rate_limit_us);
+static struct governor_attr down_rate_limit_us = __ATTR_RW(down_rate_limit_us);
 static struct governor_attr iowait_boost_enable =
-	__ATTR_RO(iowait_boost_enable);
+	__ATTR_RW(iowait_boost_enable);
 
 static struct attribute *sugov_attributes[] = {
 	&up_rate_limit_us.attr,
@@ -818,8 +811,10 @@ static int sugov_init(struct cpufreq_policy *policy)
 		goto stop_kthread;
 	}
 
-	tunables->up_rate_limit_us = 1000;
-	tunables->down_rate_limit_us = 1000;
+	tunables->up_rate_limit_us =
+				cpufreq_policy_transition_delay_us(policy);
+	tunables->down_rate_limit_us =
+				cpufreq_policy_transition_delay_us(policy);
 	tunables->iowait_boost_enable = false;
 
 	policy->governor_data = sg_policy;
