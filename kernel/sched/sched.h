@@ -1966,10 +1966,8 @@ static inline u64 sched_avg_period(void)
  */
 static inline int hrtick_enabled(struct rq *rq)
 {
-#ifndef SCHED_FEAT_HRTICK
+	if (!sched_feat(HRTICK))
 		return 0;
-#endif
-
 	if (!cpu_active(cpu_of(rq)))
 		return 0;
 	return hrtimer_is_hres_active(&rq->hrtick_timer);
@@ -2110,9 +2108,8 @@ static inline unsigned long __cpu_util(int cpu)
 	cfs_rq = &cpu_rq(cpu)->cfs;
 	util = READ_ONCE(cfs_rq->avg.util_avg);
 
-#ifdef SCHED_FEAT_UTIL_EST
-	util = max(util, READ_ONCE(cfs_rq->avg.util_est.enqueued));
-#endif
+	if (sched_feat(UTIL_EST))
+		util = max(util, READ_ONCE(cfs_rq->avg.util_est.enqueued));
 
 	return min_t(unsigned long, util, capacity_orig_of(cpu));
 }

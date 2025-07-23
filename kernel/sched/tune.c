@@ -317,9 +317,9 @@ schedtune_boostgroup_update(int idx, int boost)
 static inline bool
 schedtune_update_timestamp(struct task_struct *p)
 {
-#ifdef SCHED_FEAT_SCHEDTUNE_BOOST_HOLD_ALL
-	return true;
-#endif
+	if (sched_feat(SCHEDTUNE_BOOST_HOLD_ALL))
+		return true;
+
 	return task_has_rt_policy(p);
 }
 
