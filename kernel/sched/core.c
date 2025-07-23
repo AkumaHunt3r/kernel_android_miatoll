@@ -199,8 +199,10 @@ static void update_rq_clock_task(struct rq *rq, s64 delta)
 	rq->clock_task += delta;
 
 #if defined(CONFIG_IRQ_TIME_ACCOUNTING) || defined(CONFIG_PARAVIRT_TIME_ACCOUNTING)
-	if ((irq_delta + steal) && sched_feat(NONTASK_CAPACITY))
+#ifdef SCHED_FEAT_NONTASK_CAPACITY
+	if ((irq_delta + steal))
 		sched_rt_avg_update(rq, irq_delta + steal);
+#endif
 #endif
 }
 
@@ -214,8 +216,9 @@ void update_rq_clock(struct rq *rq)
 		return;
 
 #ifdef CONFIG_SCHED_DEBUG
-	if (sched_feat(WARN_DOUBLE_CLOCK))
-		SCHED_WARN_ON(rq->clock_update_flags & RQCF_UPDATED);
+#ifdef SCHED_FEAT_WARN_DOUBLE_CLOCK
+	SCHED_WARN_ON(rq->clock_update_flags & RQCF_UPDATED);
+#endif
 	rq->clock_update_flags |= RQCF_UPDATED;
 #endif
 
@@ -2672,7 +2675,8 @@ static inline bool ttwu_queue_cond(int cpu, int wake_flags)
 
 static bool ttwu_queue_wakelist(struct task_struct *p, int cpu, int wake_flags)
 {
-	if (sched_feat(TTWU_QUEUE) && ttwu_queue_cond(cpu, wake_flags)) {
+#ifdef SCHED_FEAT_TTWU_QUEUE
+	if (ttwu_queue_cond(cpu, wake_flags)) {
 		if (WARN_ON_ONCE(cpu == smp_processor_id()))
 			return false;
 
@@ -2680,6 +2684,7 @@ static bool ttwu_queue_wakelist(struct task_struct *p, int cpu, int wake_flags)
 		__ttwu_queue_wakelist(p, cpu, wake_flags);
 		return true;
 	}
+#endif
 
 	return false;
 }
@@ -4334,8 +4339,9 @@ static void __sched notrace __schedule(bool preempt)
 
 	schedule_debug(prev);
 
-	if (sched_feat(HRTICK))
-		hrtick_clear(rq);
+#ifdef SCHED_FEAT_HRTICK
+	hrtick_clear(rq);
+#endif
 
 	local_irq_disable();
 	rcu_note_context_switch(preempt);

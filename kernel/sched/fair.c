@@ -3164,10 +3164,8 @@ ___update_load_avg(u64 now, int cpu, struct sched_avg *sa,
 
 static inline void cfs_se_util_change(struct sched_avg *avg)
 {
+#ifdef SCHED_FEAT_UTIL_EST
 	unsigned int enqueued;
-
-	if (!sched_feat(UTIL_EST))
-		return;
 
 	/* Avoid store if the flag has been already set */
 	enqueued = avg->util_est.enqueued;
@@ -3177,6 +3175,7 @@ static inline void cfs_se_util_change(struct sched_avg *avg)
 	/* Reset flag to report util_avg has been updated */
 	enqueued &= ~UTIL_AVG_UNCHANGED;
 	WRITE_ONCE(avg->util_est.enqueued, enqueued);
+#endif
 }
 
 static int
@@ -3290,11 +3289,9 @@ static inline void update_tg_load_avg(struct cfs_rq *cfs_rq, int force)
 void set_task_rq_fair(struct sched_entity *se,
 		      struct cfs_rq *prev, struct cfs_rq *next)
 {
+#ifdef ATTACH_AGE_LOAD
 	u64 p_last_update_time;
 	u64 n_last_update_time;
-
-	if (!sched_feat(ATTACH_AGE_LOAD))
-		return;
 
 	/*
 	 * We are supposed to update the task to "current" time, then its up to
@@ -3329,6 +3326,7 @@ void set_task_rq_fair(struct sched_entity *se,
 #endif
 	__update_load_avg_blocked_se(p_last_update_time, cpu_of(rq_of(prev)), se);
 	se->avg.last_update_time = n_last_update_time;
+#endif
 }
 
 /* Take into account change of utilization of a child task group */
@@ -3792,10 +3790,8 @@ static inline unsigned long task_util_est(struct task_struct *p)
 static inline void util_est_enqueue(struct cfs_rq *cfs_rq,
 				    struct task_struct *p)
 {
+#ifdef SCHED_FEAT_UTIL_EST
 	unsigned int enqueued;
-
-	if (!sched_feat(UTIL_EST))
-		return;
 
 	/* Update root cfs_rq's estimated utilization */
 	enqueued  = cfs_rq->avg.util_est.enqueued;
@@ -3804,6 +3800,7 @@ static inline void util_est_enqueue(struct cfs_rq *cfs_rq,
 
 	trace_sched_util_est_task(p, &p->se.avg);
 	trace_sched_util_est_cpu(cpu_of(rq_of(cfs_rq)), cfs_rq);
+#endif
 }
 
 /*
@@ -3822,11 +3819,9 @@ static inline bool within_margin(int value, int margin)
 static void
 util_est_dequeue(struct cfs_rq *cfs_rq, struct task_struct *p, bool task_sleep)
 {
+#ifdef SCHED_FEAT_UTIL_EST
 	long last_ewma_diff;
 	struct util_est ue;
-
-	if (!sched_feat(UTIL_EST))
-		return;
 
 	/*
 	 * Update root cfs_rq's estimated utilization
@@ -3864,12 +3859,12 @@ util_est_dequeue(struct cfs_rq *cfs_rq, struct task_struct *p, bool task_sleep)
 	 * to smooth utilization decreases.
 	 */
 	ue.enqueued = (task_util(p) | UTIL_AVG_UNCHANGED);
-	if (sched_feat(UTIL_EST_FASTUP)) {
-		if (ue.ewma < ue.enqueued) {
-			ue.ewma = ue.enqueued;
-			goto done;
-		}
+#ifdef SCHED_FEAT_UTIL_EST_FASTUP
+	if (ue.ewma < ue.enqueued) {
+		ue.ewma = ue.enqueued;
+		goto done;
 	}
+#endif
 
 	/*
 	 * Skip update of task's estimated utilization when its EWMA is
@@ -3903,6 +3898,7 @@ done:
 	WRITE_ONCE(p->se.avg.util_est, ue);
 
 	trace_sched_util_est_task(p, &p->se.avg);
+#endif
 }
 
 #else /* CONFIG_SMP */
@@ -4000,8 +3996,10 @@ place_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int initial)
 	 * little, place the new task so that it fits in the slot that
 	 * stays open at the end.
 	 */
-	if (initial && sched_feat(START_DEBIT))
+#ifdef SCHED_FEAT_START_DEBIT
+	if (initial)
 		vruntime += sched_vslice(cfs_rq, se);
+#endif
 
 	/* sleeps up to a single latency don't count. */
 	if (!initial) {
@@ -4011,8 +4009,9 @@ place_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int initial)
 		 * Halve their sleep time's effect, to allow
 		 * for a gentler effect of sleepers:
 		 */
-		if (sched_feat(GENTLE_FAIR_SLEEPERS))
-			thresh >>= 1;
+#ifdef SCHED_FEAT_GENTLE_FAIR_SLEEPERS
+		thresh >>= 1;
+#endif
 
 		vruntime -= thresh;
 	}
@@ -4435,9 +4434,10 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
 	/*
 	 * don't let the period tick interfere with the hrtick preemption
 	 */
-	if (!sched_feat(DOUBLE_TICK) &&
-			hrtimer_active(&rq_of(cfs_rq)->hrtick_timer))
+#ifndef SCHED_FEAT_DOUBLE_TICK
+	if (hrtimer_active(&rq_of(cfs_rq)->hrtick_timer))
 		return;
+#endif
 #endif
 
 	if (cfs_rq->nr_running > 1)
@@ -5836,7 +5836,11 @@ static unsigned long source_load(int cpu, int type)
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long total = weighted_cpuload(rq);
 
-	if (type == 0 || !sched_feat(LB_BIAS))
+#ifndef SCHED_FEAT_LB_BIAS
+	return total;
+#endif
+
+	if (type == 0)
 		return total;
 
 	return min(rq->cpu_load[type-1], total);
@@ -5851,7 +5855,11 @@ static unsigned long target_load(int cpu, int type)
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long total = weighted_cpuload(rq);
 
-	if (type == 0 || !sched_feat(LB_BIAS))
+#ifndef SCHED_FEAT_LB_BIAS
+	return total;
+#endif
+
+	if (type == 0)
 		return total;
 
 	return max(rq->cpu_load[type-1], total);
@@ -6170,32 +6178,32 @@ static unsigned long cpu_util_without(int cpu, struct task_struct *p)
 	 * covered by the following code when estimated utilization is
 	 * enabled.
 	 */
-	if (sched_feat(UTIL_EST)) {
-		unsigned int estimated =
-			READ_ONCE(cfs_rq->avg.util_est.enqueued);
+#ifdef SCHED_FEAT_UTIL_EST
+	unsigned int estimated =
+		READ_ONCE(cfs_rq->avg.util_est.enqueued);
 
-		/*
-		 * Despite the following checks we still have a small window
-		 * for a possible race, when an execl's select_task_rq_fair()
-		 * races with LB's detach_task():
-		 *
-		 *   detach_task()
-		 *     p->on_rq = TASK_ON_RQ_MIGRATING;
-		 *     ---------------------------------- A
-		 *     deactivate_task()                   \
-		 *       dequeue_task()                     + RaceTime
-		 *         util_est_dequeue()              /
-		 *     ---------------------------------- B
-		 *
-		 * The additional check on "current == p" it's required to
-		 * properly fix the execl regression and it helps in further
-		 * reducing the chances for the above race.
-		 */
-		if (unlikely(task_on_rq_queued(p) || current == p))
-			lsub_positive(&estimated, _task_util_est(p));
+	/*
+	 * Despite the following checks we still have a small window
+	 * for a possible race, when an execl's select_task_rq_fair()
+	 * races with LB's detach_task():
+	 *
+	 *   detach_task()
+	 *     p->on_rq = TASK_ON_RQ_MIGRATING;
+	 *     ---------------------------------- A
+	 *     deactivate_task()                   \
+	 *       dequeue_task()                     + RaceTime
+	 *         util_est_dequeue()              /
+	 *     ---------------------------------- B
+	 *
+	 * The additional check on "current == p" it's required to
+	 * properly fix the execl regression and it helps in further
+	 * reducing the chances for the above race.
+	 */
+	if (unlikely(task_on_rq_queued(p) || current == p))
+		lsub_positive(&estimated, _task_util_est(p));
 
-		util = max(util, estimated);
-	}
+	util = max(util, estimated);
+#endif
 #endif
 
 	/*
@@ -6695,8 +6703,9 @@ static inline int select_energy_cpu_idx(struct energy_env *eenv)
 	 * Compare the other CPU candidates to find a CPU which can be
 	 * more energy efficient then EAS_CPU_PRV
 	 */
-	if (sched_feat(FBT_STRICT_ORDER))
-		last_cpu_idx = EAS_CPU_BKP;
+#ifdef SCHED_FEAT_FBT_STRICT_ORDER
+	last_cpu_idx = EAS_CPU_BKP;
+#endif
 
 	for(cpu_idx = EAS_CPU_NXT; cpu_idx <= last_cpu_idx; cpu_idx++) {
 		if (eenv->cpu[cpu_idx].cpu_id < 0)
@@ -6713,8 +6722,9 @@ static inline int select_energy_cpu_idx(struct energy_env *eenv)
 		    eenv->cpu[eenv->next_idx].nrg_delta) {
 			eenv->next_idx = cpu_idx;
 			/* break out if we want to stop on first saving candidate */
-			if (sched_feat(FBT_STRICT_ORDER))
-				break;
+#ifdef SCHED_FEAT_FBT_STRICT_ORDER
+			break;
+#endif
 		}
 	}
 
@@ -6812,14 +6822,16 @@ wake_affine_weight(struct sched_domain *sd, struct task_struct *p,
 	task_load = task_h_load(p);
 
 	this_eff_load += task_load;
-	if (sched_feat(WA_BIAS))
-		this_eff_load *= 100;
+#ifdef SCHED_FEAT_WA_BIAS
+	this_eff_load *= 100;
+#endif
 	this_eff_load *= capacity_of(prev_cpu);
 
 	prev_eff_load = source_load(prev_cpu, sd->wake_idx);
 	prev_eff_load -= task_load;
-	if (sched_feat(WA_BIAS))
-		prev_eff_load *= 100 + (sd->imbalance_pct - 100) / 2;
+#ifdef SCHED_FEAT_WA_BIAS
+	prev_eff_load *= 100 + (sd->imbalance_pct - 100) / 2;
+#endif
 	prev_eff_load *= capacity_of(this_cpu);
 
 	return this_eff_load <= prev_eff_load ? this_cpu : nr_cpumask_bits;
@@ -6831,11 +6843,14 @@ static int wake_affine(struct sched_domain *sd, struct task_struct *p,
 	int this_cpu = smp_processor_id();
 	int target = nr_cpumask_bits;
 
-	if (sched_feat(WA_IDLE))
-		target = wake_affine_idle(this_cpu, prev_cpu, sync);
+#ifdef SCHED_FEAT_WA_IDLE
+	target = wake_affine_idle(this_cpu, prev_cpu, sync);
+#endif
 
-	if (sched_feat(WA_WEIGHT) && target == nr_cpumask_bits)
+#ifdef SCHED_FEAT_WA_WEIGHT
+	if (target == nr_cpumask_bits)
 		target = wake_affine_weight(sd, p, this_cpu, prev_cpu, sync);
+#endif
 
 	schedstat_inc(p->se.statistics.nr_wakeups_affine_attempts);
 	if (target == nr_cpumask_bits)
@@ -7355,16 +7370,18 @@ static int select_idle_cpu(struct task_struct *p, struct sched_domain *sd, int t
 	avg_idle = this_rq()->avg_idle / 512;
 	avg_cost = this_sd->avg_scan_cost + 1;
 
-	if (sched_feat(SIS_AVG_CPU) && avg_idle < avg_cost)
+#ifdef SCHED_FEAT_SIS_AVG_CPU
+	if (avg_idle < avg_cost)
 		return -1;
+#endif
 
-	if (sched_feat(SIS_PROP)) {
-		u64 span_avg = sd->span_weight * avg_idle;
-		if (span_avg > 4*avg_cost)
-			nr = div_u64(span_avg, avg_cost);
-		else
-			nr = 4;
-	}
+#ifdef SCHED_FEAT_SIS_PROP
+	u64 span_avg = sd->span_weight * avg_idle;
+	if (span_avg > 4*avg_cost)
+		nr = div_u64(span_avg, avg_cost);
+	else
+		nr = 4;
+#endif
 
 	time = local_clock();
 
@@ -8532,22 +8549,24 @@ static inline int wake_energy(struct task_struct *p, int prev_cpu,
 	 * the heuristics we use there in selecting candidate
 	 * CPUs.
 	 */
-	if (unlikely(!sched_feat(FIND_BEST_TARGET) && !task_util_est(p)))
+#ifndef SCHED_FEAT_FIND_BEST_TARGET
+	if (unlikely(!task_util_est(p)))
 		return false;
-
-	if(!sched_feat(EAS_PREFER_IDLE)){
-		/*
-		 * Force prefer-idle tasks into the slow path, this may not happen
-		 * if none of the sd flags matched.
-		 */
-#ifdef CONFIG_SCHED_TUNE
-		if (schedtune_prefer_idle(p) > 0
-#elif  CONFIG_UCLAMP_TASK
-		if (uclamp_latency_sensitive(p) > 0
 #endif
-				&& !sync)
-			return false;
-	}
+
+#ifndef SCHED_FEAT_EAS_PREFER_IDLE
+	/*
+	 * Force prefer-idle tasks into the slow path, this may not happen
+	 * if none of the sd flags matched.
+	 */
+#ifdef CONFIG_SCHED_TUNE
+	if (schedtune_prefer_idle(p) > 0
+#elif  CONFIG_UCLAMP_TASK
+	if (uclamp_latency_sensitive(p) > 0
+#endif
+			&& !sync)
+		return false;
+#endif
 	return true;
 }
 
@@ -8821,10 +8840,12 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 	if (unlikely(throttled_hierarchy(cfs_rq_of(pse))))
 		return;
 
-	if (sched_feat(NEXT_BUDDY) && scale && !(wake_flags & WF_FORK)) {
+#ifdef SCHED_FEAT_NEXT_BUDDY
+	if (scale && !(wake_flags & WF_FORK)) {
 		set_next_buddy(pse);
 		next_buddy_marked = 1;
 	}
+#endif
 
 	/*
 	 * We can come here with TIF_NEED_RESCHED already set from new task
@@ -8848,8 +8869,12 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 	 * Batch and idle tasks do not preempt non-idle tasks (their preemption
 	 * is driven by the tick):
 	 */
-	if (unlikely(p->policy != SCHED_NORMAL) || !sched_feat(WAKEUP_PREEMPTION))
+	if (unlikely(p->policy != SCHED_NORMAL))
 		return;
+
+#ifndef SCHED_FEAT_WAKEUP_PREEMPTION
+	return;
+#endif
 
 	find_matching_se(&se, &pse);
 	update_curr(cfs_rq_of(se));
@@ -8880,8 +8905,10 @@ preempt:
 	if (unlikely(!se->on_rq || curr == rq->idle))
 		return;
 
-	if (sched_feat(LAST_BUDDY) && scale && entity_is_task(se))
+#ifdef SCHED_FEAT_LAST_BUDDY
+	if (scale && entity_is_task(se))
 		set_last_buddy(se);
+#endif
 }
 
 static struct task_struct *
@@ -9273,10 +9300,12 @@ static int task_hot(struct task_struct *p, struct lb_env *env)
 	/*
 	 * Buddy candidates are cache hot:
 	 */
-	if (sched_feat(CACHE_HOT_BUDDY) && env->dst_rq->nr_running &&
+#ifdef SCHED_FEAT_CACHE_HOT_BUDDY
+	if (env->dst_rq->nr_running &&
 			(&p->se == cfs_rq_of(&p->se)->next ||
 			 &p->se == cfs_rq_of(&p->se)->last))
 		return 1;
+#endif
 
 	if (sysctl_sched_migration_cost == -1)
 		return 1;
@@ -9581,8 +9610,10 @@ redo:
 		load = max_t(unsigned long, task_h_load(p), 1);
 
 
-		if (sched_feat(LB_MIN) && load < 16 && !env->sd->nr_balance_failed)
+#ifdef SCHED_FEAT_LB_MIN
+		if (load < 16 && !env->sd->nr_balance_failed)
 			goto next;
+#endif
 
 		/*
 		 * p is not running task when we goes until here, so if p is one
