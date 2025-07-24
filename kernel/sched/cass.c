@@ -179,7 +179,7 @@ static int cass_best_cpu(struct task_struct *p, int prev_cpu, bool sync, bool rt
 		 * Get the current capacity of this CPU adjusted for thermal
 		 * pressure as well as IRQ and RT-task time.
 		 */
-		curr->cap_max = capacity_of(cpu);
+		curr->cap_max = arch_scale_cpu_capacity(NULL, cpu);
 
 		/* Prefer the CPU that more closely meets the uclamp minimum */
 		if (curr->cap_max < uc_min && curr->cap_max < best->cap_max)
