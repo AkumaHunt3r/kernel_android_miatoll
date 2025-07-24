@@ -5766,14 +5766,6 @@ static bool task_is_unity_game(struct task_struct *p)
 				ret = true;
 				break;
 			}
-
-			/* Check for a "common" thread in the thread group */
-			if (!strcmp(t->comm, "GameThread") ||
-				!strcmp(t->comm, "RenderThread") ||
-				!strcmp(t->comm, "GLThread")) {
-				ret = true;
-				break;
-			}
 		}
 		rcu_read_unlock();
 	}
