@@ -260,13 +260,21 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
 static void sugov_get_util(unsigned long *util, unsigned long *max, int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
-	unsigned long cfs_max;
+	unsigned long cap_max;
+	unsigned long util_cfs, util_rt, util_dl, util_irq;
 	struct sugov_cpu *loadcpu = &per_cpu(sugov_cpu, cpu);
 
-	cfs_max = arch_scale_cpu_capacity(NULL, cpu);
+	/* Get the maximum CPU capacity */
+	cap_max = arch_scale_cpu_capacity(NULL, cpu);
 
-	*util = min(rq->cfs.avg.util_avg, cfs_max);
-	*max = cfs_max;
+	util_cfs = rq->cfs.avg.util_avg;
+	util_rt = cpu_util_rt(cpu);
+	util_dl = cpu_util_dl(cpu);
+	util_irq = cpu_util_irq(cpu);
+
+	/* Take into account CFS, RT/DL and IRQ CPU utilization */
+	*util = min(util_cfs + util_rt + util_dl + util_irq, cap_max);
+	*max = cap_max;
 
 #ifdef CONFIG_SCHED_WALT
 	*util = boosted_cpu_util(cpu, &loadcpu->walt_load);
