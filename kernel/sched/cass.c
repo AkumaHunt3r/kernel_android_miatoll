@@ -266,6 +266,10 @@ static int cass_select_task_rq(struct task_struct *p, int prev_cpu,
 	if (sd_flag & SD_BALANCE_EXEC)
 		return prev_cpu;
 
+	/* Don't balance on exit since we don't know what @p will look like */
+	if (current->flags & PF_EXITING)
+		return prev_cpu;
+
 	/*
 	 * If there aren't any valid CPUs which are active, then just return the
 	 * first valid CPU since it's possible for certain types of tasks to run
