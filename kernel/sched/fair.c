@@ -4378,17 +4378,12 @@ pick_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 	 * be done without getting too unfair.
 	 */
 	if (cfs_rq->skip == se) {
-		unsigned int i = 1, nr_tries = cfs_rq->h_nr_running;
 		struct sched_entity *second;
 
 		if (se == curr) {
 			second = __pick_first_entity(cfs_rq);
-			for (i = 1; second == cfs_rq->skip && i < nr_tries; i++)
-				second = __pick_first_entity(cfs_rq);
 		} else {
 			second = __pick_next_entity(se);
-			for (i = 1; second == cfs_rq->skip && i < nr_tries; i++)
-				second = __pick_next_entity(se);
 			if (!second || (curr && entity_before(curr, second)))
 				second = curr;
 		}
@@ -7534,7 +7529,12 @@ static inline bool task_fits_capacity(struct task_struct *p,
 					long capacity,
 					int cpu)
 {
-	unsigned long margin = capacity_margin_of(task_cpu(p));
+	unsigned int margin;
+
+	if (capacity_orig_of(task_cpu(p)) > capacity_orig_of(cpu))
+		margin = sched_capacity_margin_down[task_cpu(p)];
+	else
+		margin = sched_capacity_margin_up[task_cpu(p)];
 
 	return capacity * 1024 > boosted_task_util(p) * margin;
 }
@@ -7542,6 +7542,20 @@ static inline bool task_fits_capacity(struct task_struct *p,
 static inline bool task_fits_max(struct task_struct *p, int cpu)
 {
 	unsigned long capacity = capacity_orig_of(cpu);
+	unsigned long max_capacity = cpu_rq(cpu)->rd->max_cpu_capacity.val;
+	unsigned long task_boost = per_task_boost(p);
+
+	if (capacity == max_capacity)
+		return true;
+
+	if (is_min_capacity_cpu(cpu)) {
+		if (task_boost_policy(p) == SCHED_BOOST_ON_BIG ||
+			task_boost > 0)
+			return false;
+	} else { /* mid cap cpu */
+		if (task_boost > 1)
+			return false;
+	}
 
 	if ((task_boost_policy(p) == SCHED_BOOST_ON_BIG ||
 #ifdef CONFIG_SCHED_TUNE
@@ -8152,7 +8166,7 @@ static int wake_cap(struct task_struct *p, int cpu, int prev_cpu)
 bool __cpu_overutilized(int cpu, int delta)
 {
 	return (capacity_orig_of(cpu) * 1024) <
-		((cpu_util(cpu) + delta) * capacity_margin_of(cpu));
+		((cpu_util(cpu) + delta) * sched_capacity_margin_up[cpu]);
 }
 
 bool cpu_overutilized(int cpu)
@@ -8412,7 +8426,7 @@ static int find_energy_efficient_cpu(struct sched_domain *sd,
 			 * fit without making the CPU overutilized.
 			 */
 			spare = capacity_spare_without(cpu_iter, p);
-			if (spare * 1024 < capacity_margin_of(cpu_iter) *
+			if (spare * 1024 < sched_capacity_margin_up[cpu_iter] *
 							task_util_est(p))
 				continue;
 
@@ -9566,12 +9580,8 @@ redo:
 		p = list_last_entry(tasks, struct task_struct, se.group_node);
 
 		env->loop++;
-		/*
-		 * We've more or less seen every task there is, call it quits
-		 * unless we haven't found any movable task yet.
-		 */
-		if (env->loop > env->loop_max &&
-		    !(env->flags & LBF_ALL_PINNED))
+		/* We've more or less seen every task there is, call it quits */
+		if (env->loop > env->loop_max)
 			break;
 
 		/* Abort the loop, if we spent more than 5 msec */
@@ -9970,6 +9980,7 @@ static void update_cpu_capacity(struct sched_domain *sd, int cpu)
 	capacity *= arch_scale_max_freq_capacity(sd, cpu);
 	capacity >>= SCHED_CAPACITY_SHIFT;
 
+	capacity = min(capacity, thermal_cap(cpu));
 	cpu_rq(cpu)->cpu_capacity_orig = capacity;
 
 	capacity *= scale_rt_capacity(cpu);
@@ -10599,7 +10610,7 @@ next_group:
 	 */
 	if (lb_sd_parent(env->sd) &&
 	    sds->total_capacity * 1024 < sds->total_util *
-			capacity_margin_of(group_first_cpu(sds->local)))
+			sched_capacity_margin_up[group_first_cpu(sds->local)])
 		set_sd_overutilized(env->sd->parent);
 }
 
@@ -11109,6 +11120,7 @@ static struct rq *find_busiest_queue(struct lb_env *env,
  * so long as it is large enough.
  */
 #define MAX_PINNED_INTERVAL	512
+#define NEED_ACTIVE_BALANCE_THRESHOLD 10
 
 static int need_active_balance(struct lb_env *env)
 {
@@ -11321,9 +11333,7 @@ more_balance:
 
 		if (env.flags & LBF_NEED_BREAK) {
 			env.flags &= ~LBF_NEED_BREAK;
-			/* Stop if we tried all running tasks */
-			if (env.loop < busiest->nr_running)
-				goto more_balance;
+			goto more_balance;
 		}
 
 		/*
@@ -11459,7 +11469,8 @@ no_move:
 			}
 
 			/* We've kicked active balancing, force task migration. */
-			sd->nr_balance_failed = sd->cache_nice_tries+1;
+			sd->nr_balance_failed = sd->cache_nice_tries +
+					NEED_ACTIVE_BALANCE_THRESHOLD - 1;
 		}
 	} else
 		sd->nr_balance_failed = 0;
