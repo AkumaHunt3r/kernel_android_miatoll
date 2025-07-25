@@ -52,12 +52,12 @@ void cass_cpu_util(struct cass_cpu_cand *c, int this_cpu, bool sync)
 #endif
 
 	/*
-	 * Account for lost capacity due to time spent in RT.
+	 * Account for lost capacity due to time spent in RT/DL tasks and IRQs.
 	 * Capacity is considered lost to RT tasks even when @p is an RT task in
 	 * order to produce consistently balanced task placement results between
 	 * CFS and RT tasks when CASS selects a CPU for them.
 	 */
-	c->cap = c->cap_max - min(cpu_util_rt(c->cpu), c->cap_max - 1);
+	c->cap = c->cap_max - min(cpu_util_rt(c->cpu) + cpu_util_dl(c->cpu) + cpu_util_irq(c->cpu), c->cap_max - 1);
 
 	/*
 	 * Deduct @current's util from this CPU if this is a sync wake, unless
