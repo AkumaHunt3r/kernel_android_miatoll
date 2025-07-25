@@ -2120,13 +2120,17 @@ static inline unsigned long __cpu_util(int cpu)
 	return min_t(unsigned long, util, capacity_orig_of(cpu));
 }
 
+static inline unsigned long cpu_util_rt(int cpu);
+static inline unsigned long cpu_util_dl(int cpu);
+static inline unsigned long cpu_util_irq(int cpu);
+
 static unsigned long capacity_margin_of(int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long capacity = rq->cpu_capacity_orig;
 	unsigned long margin_rt, margin_sqrt, i;
 
-	margin_rt = cpu_util_rt(rq) + cpu_util_dl(rq) + cpu_util_irq(rq);
+	margin_rt = cpu_util_rt(cpu) + cpu_util_dl(cpu) + cpu_util_irq(cpu);
 	margin_sqrt = int_sqrt(margin_rt) + 1;
 
 	for (i = 1; i <= margin_sqrt; i++)
