@@ -9771,6 +9771,7 @@ static void update_blocked_averages(int cpu)
 	rq->last_blocked_load_update_tick = jiffies;
 #endif
 	update_rt_rq_load_avg(rq_clock_task(rq), cpu, &rq->rt, 0);
+	update_dl_rq_load_avg(rq_clock_task(rq), cpu, &rq->dl, 0);
 	update_irq_load_avg(rq, 0);
 #ifdef CONFIG_NO_HZ_COMMON
 	rq->last_blocked_load_update_tick = jiffies;
