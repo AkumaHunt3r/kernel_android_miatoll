@@ -98,16 +98,16 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 		     cass_fits_cap(p_util, b->cap_max)))
 		goto done;
 
+	/* Prefer the CPU with higher capacity headroom */
+	if (cass_cmp(a->cap / a->util, b->cap / b->util))
+		goto done;
+
 	/* Prefer the CPU with lower relative utilization */
 	if (cass_cmp(b->util, a->util))
 		goto done;
 
 	/* Prefer the CPU that is idle (only relevant for uclamped tasks) */
 	if (cass_cmp(!!a->exit_lat, !!b->exit_lat))
-		goto done;
-
-	/* Prefer the CPU with higher capacity headroom */
-	if (cass_cmp(a->cap / a->util, b->cap / b->util))
 		goto done;
 
 	/* Prefer the CPU with higher capacity */
