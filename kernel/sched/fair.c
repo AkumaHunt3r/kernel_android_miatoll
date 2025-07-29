@@ -9297,18 +9297,25 @@ static int task_hot(struct task_struct *p, struct lb_env *env)
 	if (env->sd->flags & SD_SHARE_CPUCAPACITY)
 		return 0;
 
+	if (!(env->flags & LBF_CROSS_CLUSTER))
+		return 0;
+
 	/*
 	 * Buddy candidates are cache hot if CPUs doesn't share a cache:
 	 */
-	if ((env->flags & LBF_CROSS_CLUSTER) && env->dst_rq->nr_running &&
-			(&p->se == cfs_rq_of(&p->se)->next ||
-			 &p->se == cfs_rq_of(&p->se)->last))
-		return 1;
+	if ((env->flags & LBF_CROSS_CLUSTER)) {
+		if (env->dst_rq->nr_running &&
+				(&p->se == cfs_rq_of(&p->se)->next ||
+				&p->se == cfs_rq_of(&p->se)->last)) {
+			return 1;
+		}
+	}
 
 	delta = rq_clock_task(env->src_rq) - p->se.exec_start;
+	if (env->flags & LBF_CROSS_CLUSTER)
+		return delta <= (s64)sysctl_sched_min_granularity;
 
-	return (env->flags & LBF_CROSS_CLUSTER) ?
-		delta <= (s64)sysctl_sched_min_granularity : 0;
+	return 0;
 }
 
 #ifdef CONFIG_NUMA_BALANCING
