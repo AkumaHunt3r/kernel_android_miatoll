@@ -79,6 +79,10 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 
 	long res;
 
+	/* Prefer the current CPU for sync wakes */
+	if (sync && (cass_eq(a->cpu, this_cpu) || !cass_cmp(b->cpu, this_cpu)))
+		goto done;
+
     /* Prefer the CPU that's not overloaded */
     if (cass_cmp(b->util / b->cap_max, a->util / a->cap_max))
         goto done;
@@ -100,10 +104,6 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 
 	/* Prefer the CPU that is idle (only relevant for uclamped tasks) */
 	if (cass_cmp(!!a->exit_lat, !!b->exit_lat))
-		goto done;
-
-	/* Prefer the current CPU for sync wakes */
-	if (sync && (cass_eq(a->cpu, this_cpu) || !cass_cmp(b->cpu, this_cpu)))
 		goto done;
 
 	/* Prefer the CPU with higher capacity headroom */
