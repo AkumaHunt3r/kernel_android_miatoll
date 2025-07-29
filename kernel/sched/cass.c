@@ -115,13 +115,13 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 		goto done;
 
 	/* Prefer the CPU with lower idle exit latency that's not overloaded */
-	if (cass_cmp(b->exit_lat * (b->util / b->cap_max),
-			 a->exit_lat * (a->util / a->cap_max)))
+	if (cass_cmp(b->exit_lat * b->util / b->cap_max,
+			 a->exit_lat * a->util / a->cap_max))
 		goto done;
 
 	/* Prefer the CPU with lower idle exit latency with higher capacity headroom */
-	if (cass_cmp(b->exit_lat * (b->cap / b->util),
-			 a->exit_lat * (a->cap / a->util)))
+	if (cass_cmp(b->exit_lat * b->cap / b->util,
+			 a->exit_lat * a->cap / a->util))
 		goto done;
 
 	/* Prefer the CPU with lower idle exit latency */
