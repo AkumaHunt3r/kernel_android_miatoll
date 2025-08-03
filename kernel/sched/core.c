@@ -2384,6 +2384,7 @@ static inline int __set_cpus_allowed_ptr(struct task_struct *p,
 static void
 ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
 {
+#ifdef CONFIG_SCHEDSTATS
 	struct rq *rq;
 
 	if (!schedstat_enabled())
@@ -2418,6 +2419,7 @@ ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
 
 	if (wake_flags & WF_SYNC)
 		schedstat_inc(p->se.statistics.nr_wakeups_sync);
+#endif /* CONFIG_SCHEDSTATS */
 }
 
 static inline void ttwu_activate(struct rq *rq, struct task_struct *p, int en_flags)
