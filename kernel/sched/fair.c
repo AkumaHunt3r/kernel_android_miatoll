@@ -965,6 +965,7 @@ static void update_curr_fair(struct rq *rq)
 static inline void
 update_stats_wait_start(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
+#ifdef CONFIG_SCHEDSTATS
 	u64 wait_start, prev_wait_start;
 
 	if (!schedstat_enabled())
@@ -978,11 +979,13 @@ update_stats_wait_start(struct cfs_rq *cfs_rq, struct sched_entity *se)
 		wait_start -= prev_wait_start;
 
 	schedstat_set(se->statistics.wait_start, wait_start);
+#endif
 }
 
 static inline void
 update_stats_wait_end(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
+#ifdef CONFIG_SCHEDSTATS
 	struct task_struct *p;
 	u64 delta;
 
@@ -1010,11 +1013,13 @@ update_stats_wait_end(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	schedstat_inc(se->statistics.wait_count);
 	schedstat_add(se->statistics.wait_sum, delta);
 	schedstat_set(se->statistics.wait_start, 0);
+#endif
 }
 
 static inline void
 update_stats_enqueue_sleeper(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
+#ifdef CONFIG_SCHEDSTATS
 	struct task_struct *tsk = NULL;
 	u64 sleep_start, block_start;
 
@@ -1079,6 +1084,7 @@ update_stats_enqueue_sleeper(struct cfs_rq *cfs_rq, struct sched_entity *se)
 			account_scheduler_latency(tsk, delta >> 10, 0);
 		}
 	}
+#endif
 }
 
 /*
@@ -1087,6 +1093,7 @@ update_stats_enqueue_sleeper(struct cfs_rq *cfs_rq, struct sched_entity *se)
 static inline void
 update_stats_enqueue(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
 {
+#ifdef CONFIG_SCHEDSTATS
 	if (!schedstat_enabled())
 		return;
 
@@ -1099,12 +1106,13 @@ update_stats_enqueue(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
 
 	if (flags & ENQUEUE_WAKEUP)
 		update_stats_enqueue_sleeper(cfs_rq, se);
+#endif
 }
 
 static inline void
 update_stats_dequeue(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
 {
-
+#ifdef CONFIG_SCHEDSTATS
 	if (!schedstat_enabled())
 		return;
 
@@ -1125,6 +1133,7 @@ update_stats_dequeue(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
 			schedstat_set(se->statistics.block_start,
 				      rq_clock(rq_of(cfs_rq)));
 	}
+#endif
 }
 
 /*
@@ -4348,6 +4357,7 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	update_stats_curr_start(cfs_rq, se);
 	cfs_rq->curr = se;
 
+#ifdef CONFIG_SCHEDSTATS
 	/*
 	 * Track our maximum slice length, if the CPU's load is at
 	 * least twice that of our own weight (i.e. dont track it
@@ -4358,6 +4368,7 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 			max((u64)schedstat_val(se->statistics.slice_max),
 			    se->sum_exec_runtime - se->prev_sum_exec_runtime));
 	}
+#endif
 
 	se->prev_sum_exec_runtime = se->sum_exec_runtime;
 }
