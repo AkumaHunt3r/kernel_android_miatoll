@@ -4216,7 +4216,8 @@ void enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se, int flags)
 	}
 }
 
-static void __clear_buddies_last(struct sched_entity *se)
+static __always_inline
+void __clear_buddies_last(struct sched_entity *se)
 {
 	for_each_sched_entity(se) {
 		struct cfs_rq *cfs_rq = cfs_rq_of(se);
@@ -4227,7 +4228,8 @@ static void __clear_buddies_last(struct sched_entity *se)
 	}
 }
 
-static void __clear_buddies_next(struct sched_entity *se)
+static __always_inline
+void __clear_buddies_next(struct sched_entity *se)
 {
 	for_each_sched_entity(se) {
 		struct cfs_rq *cfs_rq = cfs_rq_of(se);
@@ -4238,7 +4240,8 @@ static void __clear_buddies_next(struct sched_entity *se)
 	}
 }
 
-static void __clear_buddies_skip(struct sched_entity *se)
+static __always_inline
+void __clear_buddies_skip(struct sched_entity *se)
 {
 	for_each_sched_entity(se) {
 		struct cfs_rq *cfs_rq = cfs_rq_of(se);
@@ -4249,7 +4252,8 @@ static void __clear_buddies_skip(struct sched_entity *se)
 	}
 }
 
-static void clear_buddies(struct cfs_rq *cfs_rq, struct sched_entity *se)
+static __always_inline
+void clear_buddies(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	if (cfs_rq->last == se)
 		__clear_buddies_last(se);
