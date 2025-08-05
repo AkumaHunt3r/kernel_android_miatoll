@@ -2959,7 +2959,8 @@ static inline int per_task_boost(struct task_struct *p)
  * Approximate:
  *   val * y^n,    where y^32 ~= 0.5 (~1 scheduling period)
  */
-static u64 decay_load(u64 val, u64 n)
+static __always_inline
+u64 decay_load(u64 val, u64 n)
 {
 	unsigned int local_n;
 
@@ -2985,7 +2986,8 @@ static u64 decay_load(u64 val, u64 n)
 	return val;
 }
 
-static u32 __accumulate_pelt_segments(u64 periods, u32 d1, u32 d3)
+static __always_inline
+u32 __accumulate_pelt_segments(u64 periods, u32 d1, u32 d3)
 {
 	u32 c1, c2, c3 = d3; /* y^0 == 1 */
 
@@ -3202,13 +3204,13 @@ static inline void cfs_se_util_change(struct sched_avg *avg)
 	WRITE_ONCE(avg->util_est.enqueued, enqueued);
 }
 
-static int
+static __always_inline int
 __update_load_avg_blocked_se(u64 now, int cpu, struct sched_entity *se)
 {
 	return ___update_load_avg(now, cpu, &se->avg, 0, 0, NULL, NULL);
 }
 
-static int
+static __always_inline int
 __update_load_avg_se(u64 now, int cpu, struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	if (___update_load_avg(now, cpu, &se->avg,
@@ -3243,7 +3245,7 @@ __update_load_avg_se(u64 now, int cpu, struct cfs_rq *cfs_rq, struct sched_entit
 	return 0;
 }
 
-static int
+static __always_inline int
 __update_load_avg_cfs_rq(u64 now, int cpu, struct cfs_rq *cfs_rq)
 {
 	return ___update_load_avg(now, cpu, &cfs_rq->avg,
@@ -3287,7 +3289,8 @@ __update_load_avg_cfs_rq(u64 now, int cpu, struct cfs_rq *cfs_rq)
  *
  * Updating tg's load_avg is necessary before update_cfs_share().
  */
-static inline void update_tg_load_avg(struct cfs_rq *cfs_rq, int force)
+static __always_inline
+void update_tg_load_avg(struct cfs_rq *cfs_rq, int force)
 {
 	long delta = cfs_rq->avg.load_avg - cfs_rq->tg_load_avg_contrib;
 
@@ -3355,7 +3358,7 @@ void set_task_rq_fair(struct sched_entity *se,
 }
 
 /* Take into account change of utilization of a child task group */
-static inline void
+static __always_inline void
 update_tg_cfs_util(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	struct cfs_rq *gcfs_rq = group_cfs_rq(se);
@@ -3375,7 +3378,7 @@ update_tg_cfs_util(struct cfs_rq *cfs_rq, struct sched_entity *se)
 }
 
 /* Take into account change of load of a child task group */
-static inline void
+static __always_inline void
 update_tg_cfs_load(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	struct cfs_rq *gcfs_rq = group_cfs_rq(se);
@@ -3437,12 +3440,14 @@ update_tg_cfs_load(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	}
 }
 
-static inline void set_tg_cfs_propagate(struct cfs_rq *cfs_rq)
+static __always_inline
+void set_tg_cfs_propagate(struct cfs_rq *cfs_rq)
 {
 	cfs_rq->propagate_avg = 1;
 }
 
-static inline int test_and_clear_tg_cfs_propagate(struct sched_entity *se)
+static __always_inline
+int test_and_clear_tg_cfs_propagate(struct sched_entity *se)
 {
 	struct cfs_rq *cfs_rq = group_cfs_rq(se);
 
@@ -3454,7 +3459,8 @@ static inline int test_and_clear_tg_cfs_propagate(struct sched_entity *se)
 }
 
 /* Update task and its cfs_rq load average */
-static inline int propagate_entity_load_avg(struct sched_entity *se)
+static __always_inline
+int propagate_entity_load_avg(struct sched_entity *se)
 {
 	struct cfs_rq *cfs_rq;
 
@@ -3481,7 +3487,8 @@ static inline int propagate_entity_load_avg(struct sched_entity *se)
  * Check if we need to update the load and the utilization of a blocked
  * group_entity:
  */
-static inline bool skip_blocked_update(struct sched_entity *se)
+static __always_inline
+bool skip_blocked_update(struct sched_entity *se)
 {
 	struct cfs_rq *gcfs_rq = group_cfs_rq(se);
 
@@ -3509,14 +3516,15 @@ static inline bool skip_blocked_update(struct sched_entity *se)
 
 #else /* CONFIG_FAIR_GROUP_SCHED */
 
-static inline void update_tg_load_avg(struct cfs_rq *cfs_rq, int force) {}
+static __always_inline void update_tg_load_avg(struct cfs_rq *cfs_rq, int force) {}
 
-static inline int propagate_entity_load_avg(struct sched_entity *se)
+static __always_inline
+int propagate_entity_load_avg(struct sched_entity *se)
 {
 	return 0;
 }
 
-static inline void set_tg_cfs_propagate(struct cfs_rq *cfs_rq) {}
+static __always_inline void set_tg_cfs_propagate(struct cfs_rq *cfs_rq) {}
 
 #endif /* CONFIG_FAIR_GROUP_SCHED */
 
@@ -3564,7 +3572,7 @@ static inline void set_tg_cfs_propagate(struct cfs_rq *cfs_rq) {}
  * Since both these conditions indicate a changed cfs_rq->avg.load we should
  * call update_tg_load_avg() when this function returns true.
  */
-static inline int
+static __always_inline int
 update_cfs_rq_load_avg(u64 now, struct cfs_rq *cfs_rq)
 {
 	struct sched_avg *sa = &cfs_rq->avg;
@@ -3641,7 +3649,8 @@ int update_irq_load_avg(struct rq *rq, int running)
 #define SKIP_AGE_LOAD	0x2
 
 /* Update task and its cfs_rq load average */
-static inline void update_load_avg(struct sched_entity *se, int flags)
+static __always_inline
+void update_load_avg(struct sched_entity *se, int flags)
 {
 	struct cfs_rq *cfs_rq = cfs_rq_of(se);
 	u64 now = cfs_rq_clock_task(cfs_rq);
@@ -3671,7 +3680,8 @@ static inline void update_load_avg(struct sched_entity *se, int flags)
  * Must call update_cfs_rq_load_avg() before this, since we rely on
  * cfs_rq->avg.last_update_time being current.
  */
-static void attach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
+static __always_inline
+void attach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	se->avg.last_update_time = cfs_rq->avg.last_update_time;
 	cfs_rq->avg.load_avg += se->avg.load_avg;
@@ -3693,7 +3703,8 @@ static void attach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
  * Must call update_cfs_rq_load_avg() before this, since we rely on
  * cfs_rq->avg.last_update_time being current.
  */
-static void detach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
+static __always_inline
+void detach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 
 	sub_positive(&cfs_rq->avg.load_avg, se->avg.load_avg);
@@ -3708,7 +3719,7 @@ static void detach_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *s
 }
 
 /* Add the load generated by se into cfs_rq's load average */
-static inline void
+static __always_inline void
 enqueue_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	struct sched_avg *sa = &se->avg;
@@ -3723,7 +3734,7 @@ enqueue_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
 }
 
 /* Remove the runnable load generated by se from cfs_rq's runnable load average */
-static inline void
+static __always_inline void
 dequeue_entity_load_avg(struct cfs_rq *cfs_rq, struct sched_entity *se)
 {
 	cfs_rq->runnable_load_avg =
@@ -3789,12 +3800,14 @@ void remove_entity_load_avg(struct sched_entity *se)
 	atomic_long_add(se->avg.util_avg, &cfs_rq->removed_util_avg);
 }
 
-static inline unsigned long cfs_rq_runnable_load_avg(struct cfs_rq *cfs_rq)
+static __always_inline
+unsigned long cfs_rq_runnable_load_avg(struct cfs_rq *cfs_rq)
 {
 	return cfs_rq->runnable_load_avg;
 }
 
-static inline unsigned long cfs_rq_load_avg(struct cfs_rq *cfs_rq)
+static __always_inline
+unsigned long cfs_rq_load_avg(struct cfs_rq *cfs_rq)
 {
 	return cfs_rq->avg.load_avg;
 }
@@ -3822,14 +3835,16 @@ static inline void update_misfit_status(struct task_struct *p, struct rq *rq)
 	rq->misfit_task_load = task_h_load(p);
 }
 
-static inline unsigned long _task_util_est(struct task_struct *p)
+static __always_inline
+unsigned long _task_util_est(struct task_struct *p)
 {
 	struct util_est ue = READ_ONCE(p->se.avg.util_est);
 
 	return max(ue.ewma, ue.enqueued);
 }
 
-static inline unsigned long task_util_est(struct task_struct *p)
+static __always_inline
+unsigned long task_util_est(struct task_struct *p)
 {
 #ifdef CONFIG_SCHED_WALT
 	if (likely(!walt_disabled && sysctl_sched_use_walt_task_util))
@@ -3838,7 +3853,8 @@ static inline unsigned long task_util_est(struct task_struct *p)
 	return max(task_util(p), _task_util_est(p));
 }
 
-static inline void util_est_enqueue(struct cfs_rq *cfs_rq,
+static __always_inline
+void util_est_enqueue(struct cfs_rq *cfs_rq,
 				    struct task_struct *p)
 {
 	unsigned int enqueued;
@@ -3868,7 +3884,7 @@ static inline bool within_margin(int value, int margin)
 	return ((unsigned int)(value + margin - 1) < (2 * margin - 1));
 }
 
-static void
+static __always_inline void
 util_est_dequeue(struct cfs_rq *cfs_rq, struct task_struct *p, bool task_sleep)
 {
 	long last_ewma_diff;
