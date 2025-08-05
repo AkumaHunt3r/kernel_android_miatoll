@@ -10136,7 +10136,7 @@ void update_group_capacity(struct sched_domain *sd, int cpu)
  * activity. The imbalance_pct is used for the threshold.
  * Return true is the capacity is reduced
  */
-static inline int
+static __always_inline int
 check_cpu_capacity(struct rq *rq, struct sched_domain *sd)
 {
 	return ((rq->cpu_capacity * sd->imbalance_pct) <
@@ -10172,7 +10172,7 @@ check_cpu_capacity(struct rq *rq, struct sched_domain *sd)
  * subtle and fragile situation.
  */
 
-static inline int sg_imbalanced(struct sched_group *group)
+static __always_inline int sg_imbalanced(struct sched_group *group)
 {
 	return group->sgc->imbalance;
 }
@@ -10189,7 +10189,7 @@ static inline int sg_imbalanced(struct sched_group *group)
  * As an example, an available capacity of 1% can appear but it doesn't make
  * any benefit for the load balance.
  */
-static inline bool
+static __always_inline bool
 group_has_capacity(struct lb_env *env, struct sg_lb_stats *sgs)
 {
 	if (sgs->sum_nr_running < sgs->group_weight)
@@ -10210,7 +10210,7 @@ group_has_capacity(struct lb_env *env, struct sg_lb_stats *sgs)
  *  overloaded so both group_has_capacity and group_is_overloaded return
  *  false.
  */
-static inline bool
+static __always_inline bool
 group_is_overloaded(struct lb_env *env, struct sg_lb_stats *sgs)
 {
 	if (sgs->sum_nr_running <= sgs->group_weight)
@@ -10232,7 +10232,7 @@ group_is_overloaded(struct lb_env *env, struct sg_lb_stats *sgs)
  * group_smaller_min_cpu_capacity: Returns true if sched_group sg has smaller
  * per-CPU capacity than sched_group ref.
  */
-static inline bool
+static __always_inline bool
 group_smaller_min_cpu_capacity(struct sched_group *sg, struct sched_group *ref)
 {
 	return sg->sgc->min_capacity *
@@ -10244,7 +10244,7 @@ group_smaller_min_cpu_capacity(struct sched_group *sg, struct sched_group *ref)
  * group_smaller_max_cpu_capacity: Returns true if sched_group sg has smaller
  * per-CPU capacity_orig than sched_group ref.
  */
-static inline bool
+static __always_inline bool
 group_smaller_max_cpu_capacity(struct sched_group *sg, struct sched_group *ref)
 {
 	return sg->sgc->max_capacity *
@@ -10256,7 +10256,7 @@ group_smaller_max_cpu_capacity(struct sched_group *sg, struct sched_group *ref)
  * group_similar_cpu_capacity: Returns true if the minimum capacity of the
  * compared groups differ by less than 12.5%.
  */
-static inline bool
+static __always_inline bool
 group_similar_cpu_capacity(struct sched_group *sg, struct sched_group *ref)
 {
 	long diff = sg->sgc->min_capacity - ref->sgc->min_capacity;
@@ -10265,7 +10265,7 @@ group_similar_cpu_capacity(struct sched_group *sg, struct sched_group *ref)
 	return abs(diff) < max >> 3;
 }
 
-static inline enum
+static __always_inline enum
 group_type group_classify(struct sched_group *group,
 			  struct sg_lb_stats *sgs)
 {
@@ -10291,7 +10291,7 @@ group_type group_classify(struct sched_group *group,
  * @overload: Indicate pullable load (e.g. >1 runnable task).
  * @overutilized: Indicate overutilization for any CPU.
  */
-static inline void update_sg_lb_stats(struct lb_env *env,
+static __always_inline void update_sg_lb_stats(struct lb_env *env,
 			struct sched_group *group, int load_idx,
 			int local_group, struct sg_lb_stats *sgs,
 			bool *overload, bool *overutilized, bool *misfit_task)
@@ -10384,7 +10384,8 @@ static inline void update_sg_lb_stats(struct lb_env *env,
  * Return: %true if @sg is a busier group than the previously selected
  * busiest group. %false otherwise.
  */
-static bool update_sd_pick_busiest(struct lb_env *env,
+static __always_inline
+bool update_sd_pick_busiest(struct lb_env *env,
 				   struct sd_lb_stats *sds,
 				   struct sched_group *sg,
 				   struct sg_lb_stats *sgs)
@@ -10504,7 +10505,8 @@ static struct {
  * @env: The load balancing environment.
  * @sds: variable to hold the statistics for this sched_domain.
  */
-static inline void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sds)
+static __always_inline
+void update_sd_lb_stats(struct lb_env *env, struct sd_lb_stats *sds)
 {
 	struct sched_domain *child = env->sd->child;
 	struct sched_group *sg = env->sd->groups;
@@ -10698,7 +10700,8 @@ next_group:
  * @env: The load balancing environment.
  * @sds: Statistics of the sched_domain which is to be packed
  */
-static int check_asym_packing(struct lb_env *env, struct sd_lb_stats *sds)
+static __always_inline
+int check_asym_packing(struct lb_env *env, struct sd_lb_stats *sds)
 {
 	int busiest_cpu;
 
@@ -10729,7 +10732,7 @@ static int check_asym_packing(struct lb_env *env, struct sd_lb_stats *sds)
  * @env: The load balancing environment.
  * @sds: Statistics of the sched_domain whose imbalance is to be calculated.
  */
-static inline
+static __always_inline
 void fix_small_imbalance(struct lb_env *env, struct sd_lb_stats *sds)
 {
 	unsigned long tmp, capa_now = 0, capa_move = 0;
@@ -10813,7 +10816,8 @@ void fix_small_imbalance(struct lb_env *env, struct sd_lb_stats *sds)
  * @env: load balance environment
  * @sds: statistics of the sched_domain whose imbalance is to be calculated.
  */
-static inline void calculate_imbalance(struct lb_env *env, struct sd_lb_stats *sds)
+static __always_inline
+void calculate_imbalance(struct lb_env *env, struct sd_lb_stats *sds)
 {
 	unsigned long max_pull, load_above_capacity = ~0UL;
 	struct sg_lb_stats *local, *busiest;
@@ -10950,7 +10954,8 @@ static inline void calculate_imbalance(struct lb_env *env, struct sd_lb_stats *s
  *
  * Return:	- The busiest group if imbalance exists.
  */
-static struct sched_group *find_busiest_group(struct lb_env *env)
+static __always_inline
+struct sched_group *find_busiest_group(struct lb_env *env)
 {
 	struct sg_lb_stats *local, *busiest;
 	struct sd_lb_stats sds;
@@ -11076,7 +11081,8 @@ out_balanced:
 /*
  * find_busiest_queue - find the busiest runqueue among the cpus in group.
  */
-static struct rq *find_busiest_queue(struct lb_env *env,
+static __always_inline
+struct rq *find_busiest_queue(struct lb_env *env,
 				     struct sched_group *group)
 {
 	struct rq *busiest = NULL, *rq;
@@ -11183,7 +11189,7 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 #define MAX_PINNED_INTERVAL	512
 #define NEED_ACTIVE_BALANCE_THRESHOLD 10
 
-static int need_active_balance(struct lb_env *env)
+static __always_inline int need_active_balance(struct lb_env *env)
 {
 	struct sched_domain *sd = env->sd;
 
@@ -11231,7 +11237,7 @@ static int group_balance_cpu_not_isolated(struct sched_group *sg)
 
 static int active_load_balance_cpu_stop(void *data);
 
-static int should_we_balance(struct lb_env *env)
+static __always_inline int should_we_balance(struct lb_env *env)
 {
 	struct sched_group *sg = env->sd->groups;
 	int cpu, balance_cpu = -1;
@@ -11280,7 +11286,8 @@ static int should_we_balance(struct lb_env *env)
  * Check this_cpu to ensure it is balanced within domain. Attempt to move
  * tasks if there is an imbalance.
  */
-static int load_balance(int this_cpu, struct rq *this_rq,
+static __always_inline
+int load_balance(int this_cpu, struct rq *this_rq,
 			struct sched_domain *sd, enum cpu_idle_type idle,
 			int *continue_balancing)
 {
@@ -11682,7 +11689,8 @@ static inline bool min_cap_cluster_has_misfit_task(void)
  * idle_balance is called by schedule() if this_cpu is about to become
  * idle. Attempts to pull tasks from other CPUs.
  */
-static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
+static __always_inline
+int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 {
 	unsigned long next_balance = jiffies + HZ;
 	int this_cpu = this_rq->cpu;
@@ -12249,7 +12257,8 @@ out:
  * In CONFIG_NO_HZ_COMMON case, the idle balance kickee will do the
  * rebalancing for all the cpus for whom scheduler ticks are stopped.
  */
-static void nohz_idle_balance(struct rq *this_rq, enum cpu_idle_type idle)
+static __always_inline
+void nohz_idle_balance(struct rq *this_rq, enum cpu_idle_type idle)
 {
 	int this_cpu = this_rq->cpu;
 	struct rq *rq;
@@ -13284,7 +13293,7 @@ static int task_will_be_throttled(struct task_struct *p)
 
 #endif /* CONFIG_CFS_BANDWIDTH */
 
-static inline int
+static __always_inline int
 kick_active_balance(struct rq *rq, struct task_struct *p, int new_cpu)
 {
 	unsigned long flags;
