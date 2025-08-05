@@ -4591,7 +4591,8 @@ static inline u64 cfs_rq_clock_task(struct cfs_rq *cfs_rq)
 }
 
 /* returns 0 on failure to allocate runtime */
-static int assign_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+static __always_inline
+int assign_cfs_rq_runtime(struct cfs_rq *cfs_rq)
 {
 	struct task_group *tg = cfs_rq->tg;
 	struct cfs_bandwidth *cfs_b = tg_cfs_bandwidth(tg);
@@ -4619,7 +4620,8 @@ static int assign_cfs_rq_runtime(struct cfs_rq *cfs_rq)
 	return cfs_rq->runtime_remaining > 0;
 }
 
-static void __account_cfs_rq_runtime(struct cfs_rq *cfs_rq, u64 delta_exec)
+static __always_inline
+void __account_cfs_rq_runtime(struct cfs_rq *cfs_rq, u64 delta_exec)
 {
 	/* dock delta_exec before expiring quota (as it could span periods) */
 	cfs_rq->runtime_remaining -= delta_exec;
@@ -4827,7 +4829,8 @@ void unthrottle_cfs_rq(struct cfs_rq *cfs_rq)
 		resched_curr(rq);
 }
 
-static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b, u64 remaining)
+static __always_inline
+u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b, u64 remaining)
 {
 	struct cfs_rq *cfs_rq;
 	u64 runtime;
@@ -4953,7 +4956,8 @@ static const u64 cfs_bandwidth_slack_period = 5 * NSEC_PER_MSEC;
  * hrtimer base being cleared by hrtimer_start. In the case of
  * migrate_hrtimers, base is never cleared, so we are fine.
  */
-static int runtime_refresh_within(struct cfs_bandwidth *cfs_b, u64 min_expire)
+static __always_inline
+int runtime_refresh_within(struct cfs_bandwidth *cfs_b, u64 min_expire)
 {
 	struct hrtimer *refresh_timer = &cfs_b->period_timer;
 	s64 remaining;
@@ -4989,7 +4993,8 @@ static void start_cfs_slack_bandwidth(struct cfs_bandwidth *cfs_b)
 }
 
 /* we know any runtime found here is valid as update_curr() precedes return */
-static void __return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+static __always_inline
+void __return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
 {
 	struct cfs_bandwidth *cfs_b = tg_cfs_bandwidth(cfs_rq->tg);
 	s64 slack_runtime = cfs_rq->runtime_remaining - min_cfs_rq_runtime;
@@ -5105,7 +5110,8 @@ static void sync_throttle(struct task_group *tg, int cpu)
 }
 
 /* conditionally throttle active cfs_rq's from put_prev_entity() */
-static bool check_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+static __always_inline
+bool check_cfs_rq_runtime(struct cfs_rq *cfs_rq)
 {
 	if (!cfs_bandwidth_used())
 		return false;
