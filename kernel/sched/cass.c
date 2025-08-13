@@ -31,6 +31,8 @@ struct cass_cpu_cand {
 	unsigned long cap;
 	unsigned long cap_max;
 	unsigned long util;
+	unsigned long hard_util;
+	unsigned long eff_util;
 };
 
 static __always_inline
@@ -51,13 +53,16 @@ void cass_cpu_util(struct cass_cpu_cand *c, int this_cpu, bool sync)
 	}
 #endif
 
+	/* Get the utilization of everything other than CFS tasks */
+	c->hard_util = cpu_util_rt(c->cpu) + cpu_util_dl(c->cpu) + cpu_util_irq(c->cpu);
+
 	/*
 	 * Account for lost capacity due to time spent in RT/DL tasks and IRQs.
 	 * Capacity is considered lost to RT tasks even when @p is an RT task in
 	 * order to produce consistently balanced task placement results between
 	 * CFS and RT tasks when CASS selects a CPU for them.
 	 */
-	c->cap = c->cap_max - min(cpu_util_rt(c->cpu) + cpu_util_dl(c->cpu) + cpu_util_irq(c->cpu), c->cap_max - 1);
+	c->cap = c->cap_max - min(c->hard_util, c->cap_max - 1);
 
 	/*
 	 * Deduct @current's util from this CPU if this is a sync wake, unless
@@ -79,27 +84,19 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 
 	long res;
 
-	/* Prefer the current CPU for sync wakes */
-	if (sync && (cass_eq(a->cpu, this_cpu) || !cass_cmp(b->cpu, this_cpu)))
-		goto done;
-
     /* Prefer the CPU that's not overloaded */
-    if (cass_cmp(b->util / b->cap_max, a->util / a->cap_max))
+    if (cass_cmp(b->eff_util / b->cap_max, a->eff_util / a->cap_max))
         goto done;
 
     /* Prefer the CPU that's less overloaded if they're both overloaded */
-	if (b->util > b->cap_max && a->util > a->cap_max &&
-	    cass_cmp(b->util * SCHED_CAPACITY_SCALE / b->cap_max,
-		     a->util * SCHED_CAPACITY_SCALE / a->cap_max))
+	if (b->eff_util > b->cap_max && a->eff_util > a->cap_max &&
+	    cass_cmp(b->eff_util * SCHED_CAPACITY_SCALE / b->cap_max,
+		     a->eff_util * SCHED_CAPACITY_SCALE / a->cap_max))
         goto done;
 
 	/* Prefer the CPU that fits the task */
 	if (cass_cmp(cass_fits_cap(p_util, a->cap_max),
-		     cass_fits_cap(p_util, b->cap_max)))
-		goto done;
-
-	/* Prefer the CPU with higher capacity headroom */
-	if (cass_cmp(a->cap / a->util, b->cap / b->util))
+			 cass_fits_cap(p_util, b->cap_max)))
 		goto done;
 
 	/* Prefer the CPU with lower relative utilization */
@@ -110,18 +107,12 @@ bool cass_cpu_better(const struct cass_cpu_cand *a,
 	if (cass_cmp(!!a->exit_lat, !!b->exit_lat))
 		goto done;
 
+	/* Prefer the current CPU for sync wakes */
+	if (sync && (cass_eq(a->cpu, this_cpu) || !cass_cmp(b->cpu, this_cpu)))
+		goto done;
+
 	/* Prefer the CPU with higher capacity */
 	if (cass_cmp(a->cap, b->cap))
-		goto done;
-
-	/* Prefer the CPU with lower idle exit latency that's not overloaded */
-	if (cass_cmp(b->exit_lat * b->util / b->cap_max,
-			 a->exit_lat * a->util / a->cap_max))
-		goto done;
-
-	/* Prefer the CPU with lower idle exit latency with higher capacity headroom */
-	if (cass_cmp(b->exit_lat * b->cap / b->util,
-			 a->exit_lat * a->cap / a->util))
 		goto done;
 
 	/* Prefer the CPU with lower idle exit latency */
@@ -175,10 +166,7 @@ static int cass_best_cpu(struct task_struct *p, int prev_cpu, bool sync, bool rt
 		struct cpuidle_state *idle_state;
 		struct rq *rq = cpu_rq(cpu);
 
-		/*
-		 * Get the current capacity of this CPU adjusted for thermal
-		 * pressure as well as IRQ and RT-task time.
-		 */
+		/* Get the maximum possible capacity of this CPU. */
 		curr->cap_max = arch_scale_cpu_capacity(NULL, cpu);
 
 		/* Prefer the CPU that more closely meets the uclamp minimum */
@@ -195,8 +183,7 @@ static int cass_best_cpu(struct task_struct *p, int prev_cpu, bool sync, bool rt
 		    available_idle_cpu(cpu) || sched_idle_cpu(cpu)) {
 			/*
 			 * A non-idle candidate may be better for energy
-			 * efficiency when @p is uclamp boosted, or when the
-			 * only idle candidate found so far is the prime CPU.
+			 * efficiency when @p is uclamp boosted.
 			 * Otherwise, prefer idle candidates.
 			 */
 			if (!uc_min) {
@@ -232,6 +219,13 @@ static int cass_best_cpu(struct task_struct *p, int prev_cpu, bool sync, bool rt
 		 */
 		if (cpu != task_cpu(p))
 			curr->util += p_util;
+
+		/*
+		 * Calculate the effective utilization for this CPU candidate;
+		 * i.e., the utilization calculated by the CPU governor. This is
+		 * needed to evaluate whether or not a CPU is overloaded.
+		 */
+		curr->eff_util = max(curr->util + curr->hard_util, uc_min);
 
 		/* Clamp the utilization to the minimum performance threshold */
 		if (curr->util < uc_min)
