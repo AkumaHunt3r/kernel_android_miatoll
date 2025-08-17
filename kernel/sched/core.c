@@ -1456,7 +1456,8 @@ static inline void uclamp_post_fork(struct task_struct *p) { }
 static inline void init_uclamp(void) { }
 #endif /* CONFIG_UCLAMP_TASK */
 
-static inline void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
+static __always_inline
+void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 {
 	if (!(flags & ENQUEUE_NOCLOCK))
 		update_rq_clock(rq);
@@ -1472,7 +1473,8 @@ static inline void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 	trace_sched_enq_deq_task(p, 1, cpumask_bits(&p->cpus_allowed)[0]);
 }
 
-static inline void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
+static __always_inline
+void dequeue_task(struct rq *rq, struct task_struct *p, int flags)
 {
 	if (!(flags & DEQUEUE_NOCLOCK))
 		update_rq_clock(rq);
@@ -3242,7 +3244,7 @@ static int __init setup_schedstats(char *str)
 	if (!str)
 		goto out;
 
-	/*
+	/*1
 	 * This code is called before jump labels have been set up, so we can't
 	 * change the static branch directly just yet.  Instead set a temporary
 	 * variable so init_schedstats() can do it later.
