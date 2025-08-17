@@ -4374,8 +4374,9 @@ static void __sched notrace __schedule(bool preempt)
 
 	schedule_debug(prev);
 
-	if (sched_feat(HRTICK))
-		hrtick_clear(rq);
+#ifdef SCHED_FEAT_HRTICK
+	hrtick_clear(rq);
+#endif
 
 	local_irq_disable();
 	rcu_note_context_switch(preempt);
