@@ -1512,7 +1512,8 @@ void deactivate_task(struct rq *rq, struct task_struct *p, int flags)
 /*
  * __normal_prio - return the priority that is based on the static prio
  */
-static inline int __normal_prio(struct task_struct *p)
+static __always_inline
+int __normal_prio(struct task_struct *p)
 {
 	return p->static_prio;
 }
@@ -1524,7 +1525,8 @@ static inline int __normal_prio(struct task_struct *p)
  * setprio syscalls, and whenever the interactivity
  * estimator recalculates.
  */
-static inline int normal_prio(struct task_struct *p)
+static __always_inline
+int normal_prio(struct task_struct *p)
 {
 	int prio;
 
@@ -1544,7 +1546,8 @@ static inline int normal_prio(struct task_struct *p)
  * interactivity modifiers. Will be RT if the task got
  * RT-boosted. If not then it returns p->normal_prio.
  */
-static int effective_prio(struct task_struct *p)
+static __always_inline
+effective_prio(struct task_struct *p)
 {
 	p->normal_prio = normal_prio(p);
 	/*
