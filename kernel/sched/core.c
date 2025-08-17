@@ -1566,7 +1566,7 @@ int normal_prio(struct task_struct *p)
  * RT-boosted. If not then it returns p->normal_prio.
  */
 static __always_inline
-effective_prio(struct task_struct *p)
+int effective_prio(struct task_struct *p)
 {
 	p->normal_prio = normal_prio(p);
 	/*
@@ -6652,7 +6652,7 @@ static void attach_tasks(struct list_head *tasks, struct rq *rq)
  * there's no concurrency possible, we hold the required locks anyway
  * because of lock validation efforts.
  */
-static migrate_task_to(
+static __always_inline
 void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf,
 			  bool migrate_pinned_tasks)
 {
