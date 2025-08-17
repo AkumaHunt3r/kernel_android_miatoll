@@ -1660,7 +1660,8 @@ static inline bool is_cpu_allowed(struct task_struct *p, int cpu)
  *
  * Returns (locked) new rq. Old rq's lock is released.
  */
-static struct rq *move_queued_task(struct rq *rq, struct rq_flags *rf,
+static __always_inline
+struct rq *move_queued_task(struct rq *rq, struct rq_flags *rf,
 				   struct task_struct *p, int new_cpu)
 {
 	lockdep_assert_held(&rq->lock);
@@ -1701,7 +1702,8 @@ struct migration_arg {
  * So we race with normal scheduler movements, but that's OK, as long
  * as the task is no longer on this CPU.
  */
-static struct rq *__migrate_task(struct rq *rq, struct rq_flags *rf,
+static __always_inline
+struct rq *__migrate_task(struct rq *rq, struct rq_flags *rf,
 				 struct task_struct *p, int dest_cpu)
 {
 	/* Affinity changed (again). */
@@ -6628,7 +6630,8 @@ static void attach_tasks(struct list_head *tasks, struct rq *rq)
  * there's no concurrency possible, we hold the required locks anyway
  * because of lock validation efforts.
  */
-static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf,
+static migrate_task_to(
+void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf,
 			  bool migrate_pinned_tasks)
 {
 	struct rq *rq = dead_rq;
