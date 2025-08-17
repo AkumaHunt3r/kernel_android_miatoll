@@ -826,24 +826,28 @@ DEFINE_STATIC_KEY_FALSE(sched_uclamp_used);
 #define for_each_clamp_id(clamp_id) \
 	for ((clamp_id) = 0; (clamp_id) < UCLAMP_CNT; (clamp_id)++)
 
-static inline unsigned int uclamp_bucket_id(unsigned int clamp_value)
+static __always_inline
+unsigned int uclamp_bucket_id(unsigned int clamp_value)
 {
 	return clamp_value / UCLAMP_BUCKET_DELTA;
 }
 
-static inline unsigned int uclamp_bucket_base_value(unsigned int clamp_value)
+static __always_inline
+unsigned int uclamp_bucket_base_value(unsigned int clamp_value)
 {
 	return UCLAMP_BUCKET_DELTA * uclamp_bucket_id(clamp_value);
 }
 
-static inline enum uclamp_id uclamp_none(enum uclamp_id clamp_id)
+static __always_inline
+enum uclamp_id uclamp_none(enum uclamp_id clamp_id)
 {
 	if (clamp_id == UCLAMP_MIN)
 		return 0;
 	return SCHED_CAPACITY_SCALE;
 }
 
-static inline void uclamp_se_set(struct uclamp_se *uc_se,
+static __always_inline
+void uclamp_se_set(struct uclamp_se *uc_se,
 				 unsigned int value, bool user_defined)
 {
 	uc_se->value = value;
@@ -851,8 +855,8 @@ static inline void uclamp_se_set(struct uclamp_se *uc_se,
 	uc_se->user_defined = user_defined;
 }
 
-static inline unsigned int
-uclamp_idle_value(struct rq *rq, enum uclamp_id clamp_id,
+static __always_inline
+unsigned int uclamp_idle_value(struct rq *rq, enum uclamp_id clamp_id,
 		  unsigned int clamp_value)
 {
 	/*
@@ -868,7 +872,8 @@ uclamp_idle_value(struct rq *rq, enum uclamp_id clamp_id,
 	return uclamp_none(UCLAMP_MIN);
 }
 
-static inline void uclamp_idle_reset(struct rq *rq, enum uclamp_id clamp_id,
+static __always_inline
+void uclamp_idle_reset(struct rq *rq, enum uclamp_id clamp_id,
 				     unsigned int clamp_value)
 {
 	/* Reset max-clamp retention only on idle exit */
@@ -878,7 +883,7 @@ static inline void uclamp_idle_reset(struct rq *rq, enum uclamp_id clamp_id,
 	WRITE_ONCE(rq->uclamp[clamp_id].value, clamp_value);
 }
 
-static inline
+static __always_inline
 enum uclamp_id uclamp_rq_max_value(struct rq *rq, enum uclamp_id clamp_id,
 				   unsigned int clamp_value)
 {
@@ -899,7 +904,8 @@ enum uclamp_id uclamp_rq_max_value(struct rq *rq, enum uclamp_id clamp_id,
 	return uclamp_idle_value(rq, clamp_id, clamp_value);
 }
 
-static void __uclamp_update_util_min_rt_default(struct task_struct *p)
+static __always_inline
+void __uclamp_update_util_min_rt_default(struct task_struct *p)
 {
 	unsigned int default_util_min;
 	struct uclamp_se *uc_se;
@@ -916,7 +922,8 @@ static void __uclamp_update_util_min_rt_default(struct task_struct *p)
 	uclamp_se_set(uc_se, default_util_min, false);
 }
 
-static void uclamp_update_util_min_rt_default(struct task_struct *p)
+static __always_inline
+void uclamp_update_util_min_rt_default(struct task_struct *p)
 {
 	struct rq_flags rf;
 	struct rq *rq;
@@ -930,7 +937,8 @@ static void uclamp_update_util_min_rt_default(struct task_struct *p)
 	task_rq_unlock(rq, p, &rf);
 }
 
-static void uclamp_sync_util_min_rt_default(void)
+static __always_inline
+void uclamp_sync_util_min_rt_default(void)
 {
 	struct task_struct *g, *p;
 
@@ -957,8 +965,8 @@ static void uclamp_sync_util_min_rt_default(void)
 	rcu_read_unlock();
 }
 
-static inline struct uclamp_se
-uclamp_tg_restrict(struct task_struct *p, enum uclamp_id clamp_id)
+static __always_inline
+struct uclamp_se uclamp_tg_restrict(struct task_struct *p, enum uclamp_id clamp_id)
 {
 	struct uclamp_se uc_req = p->uclamp_req[clamp_id];
 #ifdef CONFIG_UCLAMP_TASK_GROUP
@@ -989,8 +997,8 @@ uclamp_tg_restrict(struct task_struct *p, enum uclamp_id clamp_id)
  *   group or in an autogroup
  * - the system default clamp value, defined by the sysadmin
  */
-static inline struct uclamp_se
-uclamp_eff_get(struct task_struct *p, enum uclamp_id clamp_id)
+static __always_inline
+struct uclamp_se uclamp_eff_get(struct task_struct *p, enum uclamp_id clamp_id)
 {
 	struct uclamp_se uc_req = uclamp_tg_restrict(p, clamp_id);
 	struct uclamp_se uc_max = uclamp_default[clamp_id];
@@ -1025,7 +1033,8 @@ unsigned long uclamp_eff_value(struct task_struct *p, enum uclamp_id clamp_id)
  * This "local max aggregation" allows to track the exact "requested" value
  * for each bucket when all its RUNNABLE tasks require the same clamp.
  */
-static inline void uclamp_rq_inc_id(struct rq *rq, struct task_struct *p,
+static __always_inline
+void uclamp_rq_inc_id(struct rq *rq, struct task_struct *p,
 				    enum uclamp_id clamp_id)
 {
 	struct uclamp_rq *uc_rq = &rq->uclamp[clamp_id];
@@ -1063,7 +1072,8 @@ static inline void uclamp_rq_inc_id(struct rq *rq, struct task_struct *p,
  * always valid. If it's detected they are not, as defensive programming,
  * enforce the expected state and warn.
  */
-static inline void uclamp_rq_dec_id(struct rq *rq, struct task_struct *p,
+static __always_inline
+void uclamp_rq_dec_id(struct rq *rq, struct task_struct *p,
 				    enum uclamp_id clamp_id)
 {
 	struct uclamp_rq *uc_rq = &rq->uclamp[clamp_id];
@@ -1129,7 +1139,8 @@ static inline void uclamp_rq_dec_id(struct rq *rq, struct task_struct *p,
 	}
 }
 
-static inline void uclamp_rq_inc(struct rq *rq, struct task_struct *p)
+static __always_inline
+void uclamp_rq_inc(struct rq *rq, struct task_struct *p)
 {
 	enum uclamp_id clamp_id;
 
@@ -1153,7 +1164,8 @@ static inline void uclamp_rq_inc(struct rq *rq, struct task_struct *p)
 		rq->uclamp_flags &= ~UCLAMP_FLAG_IDLE;
 }
 
-static inline void uclamp_rq_dec(struct rq *rq, struct task_struct *p)
+static __always_inline
+void uclamp_rq_dec(struct rq *rq, struct task_struct *p)
 {
 	enum uclamp_id clamp_id;
 
@@ -1173,8 +1185,8 @@ static inline void uclamp_rq_dec(struct rq *rq, struct task_struct *p)
 		uclamp_rq_dec_id(rq, p, clamp_id);
 }
 
-static inline void
-uclamp_update_active(struct task_struct *p, enum uclamp_id clamp_id)
+static __always_inline
+void uclamp_update_active(struct task_struct *p, enum uclamp_id clamp_id)
 {
 	struct rq_flags rf;
 	struct rq *rq;
@@ -1204,8 +1216,8 @@ uclamp_update_active(struct task_struct *p, enum uclamp_id clamp_id)
 }
 
 #ifdef CONFIG_UCLAMP_TASK_GROUP
-static inline void
-uclamp_update_active_tasks(struct cgroup_subsys_state *css,
+static __always_inline
+void uclamp_update_active_tasks(struct cgroup_subsys_state *css,
 			   unsigned int clamps)
 {
 	enum uclamp_id clamp_id;
@@ -1223,7 +1235,8 @@ uclamp_update_active_tasks(struct cgroup_subsys_state *css,
 }
 
 static void cpu_util_update_eff(struct cgroup_subsys_state *css);
-static void uclamp_update_root_tg(void)
+static __always_inline
+void uclamp_update_root_tg(void)
 {
 	struct task_group *tg = &root_task_group;
 
@@ -1306,7 +1319,8 @@ done:
 	return result;
 }
 
-static int uclamp_validate(struct task_struct *p,
+static __always_inline
+int uclamp_validate(struct task_struct *p,
 			   const struct sched_attr *attr)
 {
 	unsigned int lower_bound = p->uclamp_req[UCLAMP_MIN].value;
@@ -1334,7 +1348,8 @@ static int uclamp_validate(struct task_struct *p,
 	return 0;
 }
 
-static void __setscheduler_uclamp(struct task_struct *p,
+static __always_inline
+void __setscheduler_uclamp(struct task_struct *p,
 				  const struct sched_attr *attr)
 {
 	enum uclamp_id clamp_id;
@@ -1375,7 +1390,8 @@ static void __setscheduler_uclamp(struct task_struct *p,
 	}
 }
 
-static void uclamp_fork(struct task_struct *p)
+static __always_inline
+void uclamp_fork(struct task_struct *p)
 {
 	enum uclamp_id clamp_id;
 
@@ -1395,12 +1411,14 @@ static void uclamp_fork(struct task_struct *p)
 	}
 }
 
-static void uclamp_post_fork(struct task_struct *p)
+static __always_inline
+void uclamp_post_fork(struct task_struct *p)
 {
 	uclamp_update_util_min_rt_default(p);
 }
 
-static void __init init_uclamp_rq(struct rq *rq)
+static __always_inline
+void __init init_uclamp_rq(struct rq *rq)
 {
 	enum uclamp_id clamp_id;
 	struct uclamp_rq *uc_rq = rq->uclamp;
@@ -1414,7 +1432,8 @@ static void __init init_uclamp_rq(struct rq *rq)
 	rq->uclamp_flags = 0;
 }
 
-static void __init init_uclamp(void)
+static __always_inline
+void __init init_uclamp(void)
 {
 	struct uclamp_se uc_max = {};
 	enum uclamp_id clamp_id;
