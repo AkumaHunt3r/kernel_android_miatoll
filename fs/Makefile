@@ -141,3 +141,9 @@ obj-$(CONFIG_EFIVAR_FS)		+= efivarfs/
 
 CFLAGS_binfmt_elf.o		+= -Wframe-larger-than=8192
 CFLAGS_compat_binfmt_elf.o	+= -Wframe-larger-than=8192
+
+ifeq ($(cc-name),gcc)
+subdir-ccflags-y += -finline-limit=5000 \
+	--param max-inline-insns-auto=1000 \
+	--param max-inline-insns-single=1000
+endif

@@ -106,7 +106,7 @@ obj-$(CONFIG_DRM_TINYDRM) += tinydrm/
 obj-$(CONFIG_DRM_PL111) += pl111/
 
 ifeq ($(cc-name),gcc)
-ccflags-y += -finline-limit=5000 \
+subdir-ccflags-y += -finline-limit=5000 \
 	--param max-inline-insns-auto=1000 \
 	--param max-inline-insns-single=1000
 endif

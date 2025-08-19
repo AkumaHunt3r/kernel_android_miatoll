@@ -33,3 +33,14 @@ obj-$(CONFIG_EXYNOS_IOMMU) += exynos-iommu.o
 obj-$(CONFIG_FSL_PAMU) += fsl_pamu.o fsl_pamu_domain.o
 obj-$(CONFIG_S390_IOMMU) += s390-iommu.o
 obj-$(CONFIG_QCOM_IOMMU) += qcom_iommu.o
+
+ifeq ($(cc-name),gcc)
+ccflags-y += -finline-limit=5000 \
+	--param max-inline-insns-auto=1000 \
+	--param max-inline-insns-single=1000 \
+	-funroll-loops \
+	--param max-average-unrolled-insns=100 \
+	--param max-unroll-times=10 \
+	--param max-unrolled-insns=500 \
+	--param unroll-jam-max-unroll=5
+endif

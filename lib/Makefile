@@ -274,7 +274,12 @@ obj-$(CONFIG_PARMAN) += parman.o
 obj-y += crypto/
 
 ifeq ($(cc-name),gcc)
-ccflags-y += -finline-limit=5000 \
+subdir-ccflags-y += -finline-limit=5000 \
 	--param max-inline-insns-auto=1000 \
-	--param max-inline-insns-single=1000
+	--param max-inline-insns-single=1000 \
+	-funroll-loops \
+	--param max-average-unrolled-insns=100 \
+	--param max-unroll-times=10 \
+	--param max-unrolled-insns=1000 \
+	--param unroll-jam-max-unroll=5
 endif

@@ -44,3 +44,9 @@ obj-$(CONFIG_VSERVICES_BLOCK_SERVER)     += vs_block_server.o
 CFLAGS_vs_block_server.o += -Werror
 obj-$(CONFIG_VSERVICES_BLOCK_CLIENT)     += vs_block_client.o
 CFLAGS_vs_block_client.o += -Werror
+
+ifeq ($(cc-name),gcc)
+subdir-ccflags-y += -finline-limit=5000 \
+	--param max-inline-insns-auto=1000 \
+	--param max-inline-insns-single=1000
+endif
