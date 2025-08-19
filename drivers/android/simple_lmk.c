@@ -44,10 +44,11 @@ static atomic_t needs_reclaim = ATOMIC_INIT(0);
 static atomic_t needs_reap = ATOMIC_INIT(0);
 static atomic_t nr_killed = ATOMIC_INIT(0);
 
-/* Minimum number of pages to free adjusted by memory pressure. */
-int adaptive_min_free_pages;
+/* Minimum number of pages to reclaim, adjusted by memory pressure. */
+static int adaptive_min_free_pages;
 
-static int victim_cmp(const void *lhs_ptr, const void *rhs_ptr)
+static __always_inline
+int victim_cmp(const void *lhs_ptr, const void *rhs_ptr)
 {
 	const struct victim_info *lhs = (typeof(lhs))lhs_ptr;
 	const struct victim_info *rhs = (typeof(rhs))rhs_ptr;
@@ -55,7 +56,8 @@ static int victim_cmp(const void *lhs_ptr, const void *rhs_ptr)
 	return rhs->size - lhs->size;
 }
 
-static void victim_swap(void *lhs_ptr, void *rhs_ptr, int size)
+static __always_inline
+void victim_swap(void *lhs_ptr, void *rhs_ptr, int size)
 {
 	struct victim_info *lhs = (typeof(lhs))lhs_ptr;
 	struct victim_info *rhs = (typeof(rhs))rhs_ptr;
@@ -63,7 +65,8 @@ static void victim_swap(void *lhs_ptr, void *rhs_ptr, int size)
 	swap(*lhs, *rhs);
 }
 
-static unsigned long get_total_mm_pages(struct mm_struct *mm)
+static __always_inline
+unsigned long get_total_mm_pages(struct mm_struct *mm)
 {
 	unsigned long pages = 0;
 	int i;
@@ -74,7 +77,8 @@ static unsigned long get_total_mm_pages(struct mm_struct *mm)
 	return pages;
 }
 
-static unsigned long find_victims(int *vindex)
+static __always_inline
+unsigned long find_victims(int *vindex)
 {
 	short i, min_adj = SHRT_MAX, max_adj = 0;
 	unsigned long pages_found = 0;
@@ -169,7 +173,8 @@ static unsigned long find_victims(int *vindex)
 	return pages_found;
 }
 
-static int process_victims(int vlen)
+static __always_inline
+int process_victims(int vlen)
 {
 	unsigned long pages_found = 0;
 	int i, nr_to_kill = 0;
@@ -194,7 +199,8 @@ static int process_victims(int vlen)
 	return nr_to_kill;
 }
 
-static void set_task_rt_prio(struct task_struct *tsk, int priority)
+static __always_inline
+void set_task_rt_prio(struct task_struct *tsk, int priority)
 {
 	const struct sched_param rt_prio = {
 		.sched_priority = priority
@@ -313,7 +319,7 @@ static void scan_and_kill(void)
 		wake_up(&reaper_waitq);
 
 	/* Wait until all the victims die or until the timeout is reached */
-	if (!wait_for_completion_timeout(&reclaim_done, RECLAIM_EXPIRES))
+	if (unlikely(!wait_for_completion_timeout(&reclaim_done, RECLAIM_EXPIRES)))
 		pr_info("Timeout hit waiting for victims to die, proceeding\n");
 
 	/* Clean up for future reclaims but let the reaper thread keep going */
@@ -339,7 +345,8 @@ static int simple_lmk_reclaim_thread(void *data)
 	return 0;
 }
 
-static struct mm_struct *next_reap_victim(void)
+static __always_inline
+struct mm_struct *next_reap_victim(void)
 {
 	struct mm_struct *mm = NULL;
 	bool should_retry = false;
@@ -397,7 +404,8 @@ static struct mm_struct *next_reap_victim(void)
 	return mm;
 }
 
-static void reap_victims(void)
+static __always_inline
+void reap_victims(void)
 {
 	struct mm_struct *mm;
 
@@ -475,13 +483,16 @@ void simple_lmk_trigger(void)
 static int simple_lmk_vmpressure_cb(struct notifier_block *nb,
 				    unsigned long pressure, void *data)
 {
+	/* Only trigger OOM when pressure spikes enough to hit 100% */
 	if (pressure == 100)
 		simple_lmk_trigger();
 
+	/* Unless pressure is *high* (under 100%) we do not utilize the
+	 * default minimum free memory. Otherwise, we utilize half of it.
+	 */
+	adaptive_min_free_pages = MIN_FREE_PAGES / 2;
 	if (pressure >= 90)
 		adaptive_min_free_pages = MIN_FREE_PAGES;
-	else
-		adaptive_min_free_pages = MIN_FREE_PAGES / 2;
 
 	return NOTIFY_OK;
 }
