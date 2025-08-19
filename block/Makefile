@@ -39,3 +39,14 @@ obj-$(CONFIG_BLK_SED_OPAL)	+= sed-opal.o
 obj-$(CONFIG_BLK_INLINE_ENCRYPTION)	+= keyslot-manager.o bio-crypt-ctx.o \
 					   blk-crypto.o
 obj-$(CONFIG_BLK_INLINE_ENCRYPTION_FALLBACK)	+= blk-crypto-fallback.o
+
+ifeq ($(cc-name),gcc)
+ccflags-y += -finline-limit=5000 \
+	--param max-inline-insns-auto=1000 \
+	--param max-inline-insns-single=1000 \
+	-funroll-loops \
+	--param max-average-unrolled-insns=100 \
+	--param max-unroll-times=10 \
+	--param max-unrolled-insns=500 \
+	--param unroll-jam-max-unroll=5
+endif
