@@ -23,6 +23,9 @@
 #include <ipc/apr.h>
 #include "adsp_err.h"
 
+#undef pr_err
+#define pr_err(fmt, ...) do { } while (0)
+
 #define TIMEOUT_MS 1000
 /*
  * AVS bring up in the modem is optimized for the new

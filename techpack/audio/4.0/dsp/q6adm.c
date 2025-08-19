@@ -21,6 +21,9 @@
 #include <ipc/apr.h>
 #include "adsp_err.h"
 
+#undef pr_err
+#define pr_err(fmt, ...) do { } while (0)
+
 #define TIMEOUT_MS 1000
 
 #define RESET_COPP_ID 99

@@ -24,6 +24,9 @@
 #include "adsp_err.h"
 #include <dsp/voice_mhi.h>
 
+#undef pr_err
+#define pr_err(fmt, ...) do { } while (0)
+
 #define TIMEOUT_MS 300
 
 

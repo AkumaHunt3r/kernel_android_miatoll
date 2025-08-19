@@ -21,6 +21,13 @@
 #include <ipc/apr_tal.h>
 #include "adsp_err.h"
 #include "q6afecal-hwdep.h"
+
+#undef pr_err
+#undef pr_info
+
+#define pr_err(fmt, ...) do { } while (0)
+#define pr_info(fmt, ...) do { } while (0)
+
 #ifdef CONFIG_TAS25XX_ALGO
 #include <dsp/tas_smart_amp_v2.h>
 static int32_t tas_smartamp_algo_callback(uint32_t opcode, uint32_t *payload,
