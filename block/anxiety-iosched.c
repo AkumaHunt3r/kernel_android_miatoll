@@ -27,7 +27,8 @@ struct anxiety_data {
 	uint8_t batch_count;
 };
 
-static inline struct request *anxiety_next_entry(struct list_head *queue)
+static __always_inline
+struct request *anxiety_next_entry(struct list_head *queue)
 {
 	return list_first_entry(queue, struct request,
 		queuelist);
@@ -39,7 +40,8 @@ static void anxiety_merged_requests(struct request_queue *q, struct request *rq,
 	list_del_init(&next->queuelist);
 }
 
-static inline int __anxiety_dispatch(struct request_queue *q,
+static __always_inline
+int __anxiety_dispatch(struct request_queue *q,
 		struct request *rq)
 {
 	if (unlikely(!rq))
@@ -51,7 +53,8 @@ static inline int __anxiety_dispatch(struct request_queue *q,
 	return 0;
 }
 
-static uint16_t anxiety_dispatch_batch(struct request_queue *q)
+static __always_inline
+uint16_t anxiety_dispatch_batch(struct request_queue *q)
 {
 	struct anxiety_data *adata = q->elevator->elevator_data;
 	uint8_t i, j;
@@ -89,7 +92,8 @@ static uint16_t anxiety_dispatch_batch(struct request_queue *q)
 	return dispatched;
 }
 
-static uint16_t anxiety_dispatch_drain(struct request_queue *q)
+static __always_inline
+uint16_t anxiety_dispatch_drain(struct request_queue *q)
 {
 	struct anxiety_data *adata = q->elevator->elevator_data;
 	uint16_t dispatched = 0;
