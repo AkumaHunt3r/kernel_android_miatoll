@@ -193,6 +193,10 @@ static ssize_t anxiety_sync_ratio_store(struct elevator_queue *e,
 	if (ret < 0)
 		return ret;
 
+	/* Ensure sync ratio is within limits */
+	if (unlikely(adata->sync_ratio < 1))
+		adata->sync_ratio = 1;
+
 	return count;
 }
 
@@ -213,7 +217,8 @@ static ssize_t anxiety_batch_count_store(struct elevator_queue *e,
 	if (ret < 0)
 		return ret;
 
-	if (adata->batch_count < 1)
+	/* Ensure batch count is within limits */
+	if (unlikely(adata->batch_count < 1))
 		adata->batch_count = 1;
 
 	return count;
