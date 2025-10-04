@@ -731,7 +731,9 @@ endif
 
 ifeq ($(cc-name),gcc)
 KBUILD_CFLAGS += -march=armv8.2-a+crypto+crc+lse+dotprod -mcpu=cortex-a55+crypto+crc+lse+dotprod \
-	-ftree-loop-linear -floop-strip-mine -floop-block -fgraphite-identity -floop-parallelize-all \
+	-ftree-loop-linear -floop-strip-mine -floop-block \
+	-floop-nest-optimize -floop-parallelize-all -ftree-loop-if-convert \
+	-fgraphite -fgraphite-identity \
 	--param=max-inline-insns-auto=1000 \
 	-fipa-pta
 endif
