@@ -75,14 +75,3 @@ obj-$(CONFIG_QCOM_SPS_DMA) += qcom-sps-dma.o
 
 obj-y += qcom/
 obj-y += xilinx/
-
-ifeq ($(cc-name),gcc)
-subdir-ccflags-y += -finline-limit=5000 \
-	--param max-inline-insns-auto=1000 \
-	--param max-inline-insns-single=1000 \
-	-funroll-loops \
-	--param max-average-unrolled-insns=100 \
-	--param max-unroll-times=10 \
-	--param max-unrolled-insns=500 \
-	--param unroll-jam-max-unroll=5
-endif

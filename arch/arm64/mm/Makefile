@@ -12,9 +12,3 @@ KASAN_SANITIZE_physaddr.o	+= n
 
 obj-$(CONFIG_KASAN)		+= kasan_init.o
 KASAN_SANITIZE_kasan_init.o	:= n
-
-ifeq ($(cc-name),gcc)
-ccflags-y += -finline-limit=5000 \
-	--param max-inline-insns-auto=1000 \
-	--param max-inline-insns-single=1000
-endif

@@ -35,3 +35,7 @@ obj-$(CONFIG_CEC_CORE) += cec/
 obj-y += common/ platform/ pci/ usb/ mmc/ firewire/ spi/
 obj-$(CONFIG_VIDEO_DEV) += radio/
 
+
+ifeq ($(cc-name),gcc)
+subdir-ccflags-y += --param=max-inline-insns-auto=100
+endif

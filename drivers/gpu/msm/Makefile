@@ -43,9 +43,3 @@ msm_adreno-objs = $(msm_adreno-y)
 
 obj-$(CONFIG_QCOM_KGSL) += msm_kgsl_core.o
 obj-$(CONFIG_QCOM_KGSL) += msm_adreno.o
-
-ifeq ($(cc-name),gcc)
-ccflags-y += -finline-limit=5000 \
-	--param max-inline-insns-auto=1000 \
-	--param max-inline-insns-single=1000
-endif

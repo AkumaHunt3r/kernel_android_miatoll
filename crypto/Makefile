@@ -155,9 +155,3 @@ obj-$(CONFIG_CRYPTO_HASH_INFO) += hash_info.o
 obj-$(CONFIG_CRYPTO_ABLK_HELPER) += ablk_helper.o
 crypto_simd-y := simd.o
 obj-$(CONFIG_CRYPTO_SIMD) += crypto_simd.o
-
-ifeq ($(cc-name),gcc)
-subdir-ccflags-y += -finline-limit=5000 \
-	--param max-inline-insns-auto=1000 \
-	--param max-inline-insns-single=1000
-endif
